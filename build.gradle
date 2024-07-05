@@ -3,40 +3,65 @@ plugins {
     id 'idea'
     id 'com.modrinth.minotaur' version '2.+'
     id 'com.matthewprenger.cursegradle' version '1.4+'
-    id 'net.neoforged.gradle.userdev' version '7.0.+'
+    id 'fabric-loom' version '1.6-SNAPSHOT'
 }
 
 group= "team.creative" + project.mod_id
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-project.evaluationDependsOn(":CreativeCore")
+//project.evaluationDependsOn(":CreativeCore")
 
-runs {  
-    configureEach {
-        workingDirectory project.file('run')
-        systemProperty 'forge.logging.console.level', 'debug'
-        
-        modSource project.sourceSets.main
-        modSource project(":CreativeCore").sourceSets.main
+repositories {
+    mavenLocal()
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
     }
-    
-    client {
+    maven {
+        url "https://mvn.devos.one/snapshots/"
     }
-    
-    server {
+    maven {
+        name = "JitPack"
+        url = "https://jitpack.io/"
+    }
+
+    maven {
+        name = "Cafeteria Dev"
+        url = "https://maven.cafeteria.dev/releases/"
+    }
+
+    maven {
+        name = "JamiesWhiteShirt Dev"
+        url = "https://maven.jamieswhiteshirt.com/libs-release"
+        content {
+            includeGroup("com.jamieswhiteshirt")
+        }
     }
 }
 
 dependencies {
-    implementation "net.neoforged:neoforge:${forge_version}"
-    
-    implementation project(':CreativeCore')
-    
-    //minecraftLibrary "curse.maven:minema-resurrection-596719:4816846"
+    minecraft "com.mojang:minecraft:${project.property 'minecraft_version'}"
+    mappings loom.officialMojangMappings()
+
+    modImplementation "net.fabricmc:fabric-loader:${project.property 'fabric_loader_version'}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.property 'fabric_api_version'}"
+
+    //implementation project(':CreativeCore')
+
+    //minecraftLibrary fg.deobf("curse.maven:minema-resurrection-596719:4816846")
+    modImplementation "curse.maven:creativecore-257814:5281984"
+
+    def plModules = ['utility', 'client_events', 'base', 'lazy_registration']
+
+    for (final def module in plModules) {
+        modImplementation(include("io.github.fabricators_of_create.Porting-Lib:${module}:3.1.0-beta2+1.20.4"))
+    }
 }
 
-modDependencies = [
+def modDependencies = [
     [ modId: "creativecore", type: "required", ordering: "NONE", side: "BOTH", versionRange: "[" + creativecore_version + ",)" ]
 ]
-modMixins = [ "cmdcam.mixins.json" ]
+def modMixins = [ "cmdcam.mixins.json" ]

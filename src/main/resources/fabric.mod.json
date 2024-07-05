@@ -1,0 +1,34 @@
+{
+    "schemaVersion": 1,
+    "id": "cmdcam",
+    "version": "2.1.1",
+    "name": "CMDCam",
+    "description": "Create camera paths.",
+    "authors": [
+        "CreativeMD",
+        "BluSpring"
+    ],
+    "contact": {
+        "repo": "https://github.com/BluSpring/CMDCam-Fabric"
+    },
+    "license": "LGPL-2.1-only",
+    "icon": "cmdcam.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "team.creative.cmdcam.CMDCam"
+        ],
+        "client": [
+            "team.creative.cmdcam.client.CMDCamClient"
+        ]
+    },
+    "mixins": [
+        "cmdcam.mixins.json"
+    ],
+    "depends": {
+        "fabricloader": ">=0.15.7",
+        "fabric": "*",
+        "minecraft": ">=1.20.4",
+        "creativecore": ">=2.11.5"
+    }
+}

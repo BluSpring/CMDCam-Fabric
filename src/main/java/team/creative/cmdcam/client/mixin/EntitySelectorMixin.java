@@ -1,24 +1,11 @@
 package team.creative.cmdcam.client.mixin;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
-import javax.annotation.Nullable;
-
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-
 import com.google.common.collect.Lists;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-
+import io.github.fabricators_of_create.porting_lib.entity.PartEntity;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.world.entity.Entity;
@@ -26,8 +13,19 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.entity.PartEntity;
+import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import team.creative.cmdcam.client.EntitySelectorClient;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 @Mixin(EntitySelector.class)
 public abstract class EntitySelectorMixin implements EntitySelectorClient {
@@ -74,9 +72,13 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
     @Shadow
     @Final
     private boolean usesSelector;
-    
-    @Shadow
-    private void checkPermissions(CommandSourceStack source) throws CommandSyntaxException {}
+
+    @Unique
+    private void checkPermissions(FabricClientCommandSource source) throws CommandSyntaxException {
+        if (this.usesSelector && !source.hasPermission(2)) {
+            throw EntityArgument.ERROR_SELECTORS_NOT_ALLOWED.create();
+        }
+    }
     
     @Shadow
     private Predicate<Entity> getPredicate(Vec3 vec) {
@@ -92,7 +94,7 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
     }
     
     @Override
-    public Entity findSingleEntityClient(CommandSourceStack source) throws CommandSyntaxException {
+    public Entity findSingleEntityClient(FabricClientCommandSource source) throws CommandSyntaxException {
         this.checkPermissions(source);
         List<? extends Entity> list = this.findEntitiesClient(source);
         if (list.isEmpty())
@@ -103,17 +105,17 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
     }
     
     @Override
-    public List<? extends Entity> findEntitiesClient(CommandSourceStack source) throws CommandSyntaxException {
+    public List<? extends Entity> findEntitiesClient(FabricClientCommandSource source) throws CommandSyntaxException {
         this.checkPermissions(source);
         if (!this.includesEntities)
             return this.findPlayersClient(source);
         else if (this.playerName != null) {
-            for (Player player : source.getUnsidedLevel().players())
+            for (Player player : source.getWorld().players())
                 if (player.getGameProfile().getName().equalsIgnoreCase(playerName))
                     return Lists.newArrayList(player);
             return Collections.emptyList();
         } else if (this.entityUUID != null) {
-            ClientLevel level = (ClientLevel) source.getUnsidedLevel();
+            ClientLevel level = (ClientLevel) source.getWorld();
             for (Entity entity : level.entitiesForRendering())
                 if (entity.getUUID().equals(entityUUID))
                     return Lists.newArrayList(entity);
@@ -126,7 +128,7 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
             return (List<? extends Entity>) (source.getEntity() != null && predicate.test(source.getEntity()) ? Lists.newArrayList(source.getEntity()) : Collections.emptyList());
         List<Entity> list = Lists.newArrayList();
         
-        ClientLevel level = (ClientLevel) source.getUnsidedLevel();
+        ClientLevel level = (ClientLevel) source.getWorld();
         
         if (this.aabb != null)
             list.addAll(level.getEntities(this.type, this.aabb.move(vec3), predicate));
@@ -146,7 +148,7 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
     }
     
     @Override
-    public Player findSinglePlayerClient(CommandSourceStack source) throws CommandSyntaxException {
+    public Player findSinglePlayerClient(FabricClientCommandSource source) throws CommandSyntaxException {
         this.checkPermissions(source);
         List<Player> list = this.findPlayersClient(source);
         if (list.size() != 1)
@@ -155,15 +157,15 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
     }
     
     @Override
-    public List<Player> findPlayersClient(CommandSourceStack source) throws CommandSyntaxException {
+    public List<Player> findPlayersClient(FabricClientCommandSource source) throws CommandSyntaxException {
         this.checkPermissions(source);
         if (this.playerName != null) {
-            for (Player player : source.getUnsidedLevel().players())
+            for (Player player : source.getWorld().players())
                 if (player.getGameProfile().getName().equalsIgnoreCase(playerName))
                     return Lists.newArrayList(player);
             return Collections.emptyList();
         } else if (this.entityUUID != null) {
-            Player player = source.getUnsidedLevel().getPlayerByUUID(entityUUID);
+            Player player = source.getWorld().getPlayerByUUID(entityUUID);
             return player == null ? Collections.emptyList() : Lists.newArrayList(player);
         }
         
@@ -176,7 +178,7 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
         }
         
         List<Player> list = Lists.newArrayList();
-        for (Player player : source.getUnsidedLevel().players())
+        for (Player player : source.getWorld().players())
             if (predicate.test(player))
                 list.add(player);
             
