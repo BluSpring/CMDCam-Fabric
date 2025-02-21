@@ -23,6 +23,7 @@
         ]
     },
     "mixins": [
+        "compat.cmdcam.mixins.json",
         "cmdcam.mixins.json"
     ],
     "depends": {
