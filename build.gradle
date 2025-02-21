@@ -53,12 +53,6 @@ dependencies {
 
     //minecraftLibrary fg.deobf("curse.maven:minema-resurrection-596719:4816846")
     modImplementation "curse.maven:creativecore-257814:5281984"
-
-    def plModules = ['utility', 'client_events', 'base', 'lazy_registration']
-
-    for (final def module in plModules) {
-        modImplementation(include("io.github.fabricators_of_create.Porting-Lib:${module}:3.1.0-beta4+1.20.4"))
-    }
 }
 
 def modDependencies = [
