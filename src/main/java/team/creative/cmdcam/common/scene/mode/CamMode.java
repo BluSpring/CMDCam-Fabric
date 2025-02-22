@@ -1,6 +1,7 @@
 package team.creative.cmdcam.common.scene.mode;
 
 import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
@@ -18,8 +19,13 @@ public abstract class CamMode {
     public static final NamedTypeRegistry<CamMode> REGISTRY = new NamedTypeRegistry<CamMode>().addConstructorPattern(CamScene.class);
     
     static {
-        REGISTRY.register("default", DefaultMode.class);
-        REGISTRY.register("outside", OutsideMode.class);
+        if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT){
+            REGISTRY.register("default", ClientDefaultMode.class);
+            REGISTRY.register("outside", ClientOutsideMode.class);
+        }else{
+            REGISTRY.register("default", DefaultMode.class);
+            REGISTRY.register("outside", OutsideMode.class);
+        }
     }
     
     public final CamScene scene;

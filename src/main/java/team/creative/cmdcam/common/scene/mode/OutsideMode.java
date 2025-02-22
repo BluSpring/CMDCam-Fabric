@@ -1,6 +1,7 @@
 package team.creative.cmdcam.common.scene.mode;
 
 import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -14,8 +15,8 @@ import team.creative.cmdcam.common.scene.run.CamRun;
 import team.creative.cmdcam.common.utils.EnvExecutor;
 import team.creative.creativecore.common.util.mc.TickUtils;
 
-public class OutsideMode extends CamMode {
-    
+public class OutsideMode extends DefaultMode {
+
     public Entity camPlayer;
     
     public OutsideMode(CamScene scene) {
@@ -23,39 +24,36 @@ public class OutsideMode extends CamMode {
     }
     
     @Override
-    @OnlyIn(Dist.CLIENT)
     public void started(CamRun run) {
-        EnvExecutor.safeRunWhenOn(EnvType.CLIENT, () -> () -> {
-            Minecraft mc = Minecraft.getInstance();
-            Vec3 vec = mc.player.getEyePosition(TickUtils.getFrameTime(mc.level));
-            this.camPlayer = new ItemEntity(mc.level, vec.x, vec.y, vec.z, ItemStack.EMPTY);
-            this.camPlayer.setOldPosAndRot();
-        });
+//        EnvExecutor.safeRunWhenOn(EnvType.CLIENT, () -> () -> {
+//            Minecraft mc = Minecraft.getInstance();
+//            Vec3 vec = mc.player.getEyePosition(TickUtils.getFrameTime(mc.level));
+//            this.camPlayer = new ItemEntity(mc.level, vec.x, vec.y, vec.z, ItemStack.EMPTY);
+//            this.camPlayer.setOldPosAndRot();
+//        });
     }
     
     @Override
-    @OnlyIn(Dist.CLIENT)
     public void finished(CamRun run) {
-        super.finished(run);
-        EnvExecutor.safeRunWhenOn(EnvType.CLIENT, () -> () -> {
-            Minecraft mc = Minecraft.getInstance();
-            mc.cameraEntity = mc.player;
-        });
+//        super.finished(run);
+//        EnvExecutor.safeRunWhenOn(EnvType.CLIENT, () -> () -> {
+//            Minecraft mc = Minecraft.getInstance();
+//            mc.cameraEntity = mc.player;
+//        });
     }
     
     @Override
-    @OnlyIn(Dist.CLIENT)
     public Entity getCamera() {
-        return camPlayer;
+        return null;
+//        return EnvExecutor.safeCallWhenOn(EnvType.CLIENT, () -> () -> camPlayer);
     }
     
     @Override
-    @OnlyIn(Dist.CLIENT)
     public void process(CamPoint point) {
-        super.process(point);
-        EnvExecutor.safeRunWhenOn(EnvType.CLIENT, () -> () -> {
-            Minecraft.getInstance().cameraEntity = camPlayer;
-        });
+//        super.process(point);
+//        EnvExecutor.safeRunWhenOn(EnvType.CLIENT, () -> () -> {
+//            Minecraft.getInstance().cameraEntity = camPlayer;
+//        });
     }
     
     @Override
