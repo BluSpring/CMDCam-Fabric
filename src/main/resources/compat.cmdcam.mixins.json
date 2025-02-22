@@ -1,0 +1,23 @@
+{
+    "required": true,
+    "package": "io.github.fabricators_of_create.porting_lib.mixins",
+    "compatibilityLevel": "JAVA_17",
+    "server": [
+        "common.ServerLevelMixin"
+    ],
+    "mixins": [
+        "common.BlockMixin",
+        "common.BlockStateMixin",
+        "common.LevelMixin",
+        "common.PersistentEntitySectionManagerMixin"
+    ],
+    "client": [
+        "client.CameraMixin",
+        "client.ClientLevelMixin",
+        "client.EntityRenderDispatcherMixin",
+        "client.GameRendererMixin",
+        "client.MinecraftAccessor",
+        "client.MinecraftMixin"
+    ],
+    "minVersion": "0.8"
+}

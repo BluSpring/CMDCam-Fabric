@@ -3,9 +3,13 @@ package team.creative.cmdcam;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import io.github.fabricators_of_create.porting_lib.util.LazyRegistrar;
+import io.github.fabricators_of_create.porting_lib.features.LevelExtensions;
+import io.github.fabricators_of_create.porting_lib.features.entity.MultiPartEntity;
+import io.github.fabricators_of_create.porting_lib.features.entity.PartEntity;
+import io.github.fabricators_of_create.porting_lib.features.registry.LazyRegistrar;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -45,8 +49,32 @@ public class CMDCam implements ModInitializer {
     public static final CreativeNetwork NETWORK = new CreativeNetwork(1, LOGGER, new ResourceLocation(CMDCam.MODID, "main"));
     public static final CMDCamConfig CONFIG = new CMDCamConfig();
     public static final LazyRegistrar<ArgumentTypeInfo<?, ?>> COMMAND_ARGUMENT_TYPES = LazyRegistrar.create(Registries.COMMAND_ARGUMENT_TYPE, MODID);
-    
+
+    private void initPartEntity(){
+        ServerEntityEvents.ENTITY_LOAD.register((entity, world) -> {
+            if (entity instanceof MultiPartEntity partEntity && partEntity.isMultipartEntity()) {
+                PartEntity<?>[] parts = partEntity.getParts();
+                if (parts != null) {
+                    for (PartEntity<?> part : parts) {
+                        ((LevelExtensions)(world)).getPartEntityMap().put(part.getId(), part);
+                    }
+                }
+            }
+        });
+        ServerEntityEvents.ENTITY_UNLOAD.register((entity, world) -> {
+            if (entity instanceof MultiPartEntity partEntity && partEntity.isMultipartEntity()) {
+                PartEntity<?>[] parts = partEntity.getParts();
+                if (parts != null) {
+                    for (PartEntity<?> part : parts) {
+                        ((LevelExtensions)world).getPartEntityMap().remove(part.getId());
+                    }
+                }
+            }
+        });
+    }
+
     public void onInitialize() {
+        this.initPartEntity();
         this.init();
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {

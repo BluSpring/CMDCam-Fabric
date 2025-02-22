@@ -2,7 +2,8 @@ package team.creative.cmdcam.client.mixin;
 
 import com.google.common.collect.Lists;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import io.github.fabricators_of_create.porting_lib.entity.PartEntity;
+import io.github.fabricators_of_create.porting_lib.features.LevelExtensions;
+import io.github.fabricators_of_create.porting_lib.features.entity.PartEntity;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -137,7 +138,7 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
                 if (predicate.test(entity))
                     list.add(entity);
                 
-                for (PartEntity<?> p : level.getPartEntities()) {
+                for (PartEntity<?> p : ((LevelExtensions)level).getPartEntities()) {
                     Entity t = type.tryCast(p);
                     if (t != null && predicate.test(t))
                         list.add(t);

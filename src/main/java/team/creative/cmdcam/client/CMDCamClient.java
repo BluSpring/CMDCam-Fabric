@@ -3,11 +3,15 @@ package team.creative.cmdcam.client;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import io.github.fabricators_of_create.porting_lib.common.util.MinecraftClientUtil;
+import io.github.fabricators_of_create.porting_lib.features.LevelExtensions;
+import io.github.fabricators_of_create.porting_lib.features.MinecraftClientUtil;
+import io.github.fabricators_of_create.porting_lib.features.entity.MultiPartEntity;
+import io.github.fabricators_of_create.porting_lib.features.entity.PartEntity;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientEntityEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
@@ -47,8 +51,26 @@ public class CMDCamClient implements ClientModInitializer {
     public static void setServerAvailability() {
         serverAvailable = true;
     }
-    
+
+    private void initPartEntity(){
+        ClientEntityEvents.ENTITY_LOAD.register((entity, world) -> {
+            if (entity instanceof MultiPartEntity partEntity && partEntity.isMultipartEntity()) {
+                for (PartEntity<?> part : partEntity.getParts()) {
+                    ((LevelExtensions) world).getPartEntityMap().put(part.getId(), part);
+                }
+            }
+        });
+        ClientEntityEvents.ENTITY_UNLOAD.register((entity, world) -> {
+            if (entity instanceof MultiPartEntity partEntity && partEntity.isMultipartEntity()) {
+                for (PartEntity<?> part : partEntity.getParts()) {
+                    ((LevelExtensions) world).getPartEntityMap().remove(part.getId());
+                }
+            }
+        });
+    }
+
     public void onInitializeClient() {
+        this.initPartEntity();
         new CamEventHandlerClient();
         CreativeCoreClient.registerClientConfig(CMDCam.MODID);
         //ModLoadingContext.get().registerExtensionPoint(IExtensionPoint.DisplayTest.class,
