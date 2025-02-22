@@ -7,11 +7,11 @@ import net.fabricmc.fabric.api.event.EventFactory;
 
 @Environment(EnvType.CLIENT)
 public interface RenderTickStartCallback {
-	Event<RenderTickStartCallback> EVENT = EventFactory.createArrayBacked(RenderTickStartCallback.class, callbacks -> () -> {
-		for (RenderTickStartCallback callback : callbacks) {
-			callback.tick();
-		}
-	});
+    Event<RenderTickStartCallback> EVENT = EventFactory.createArrayBacked(RenderTickStartCallback.class, callbacks -> () -> {
+        for (RenderTickStartCallback callback : callbacks) {
+            callback.tick();
+        }
+    });
 
-	void tick();
+    void tick();
 }

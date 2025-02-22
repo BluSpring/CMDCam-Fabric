@@ -6,7 +6,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.fabricators_of_create.porting_lib.features.LevelExtensions;
 import io.github.fabricators_of_create.porting_lib.features.entity.MultiPartEntity;
 import io.github.fabricators_of_create.porting_lib.features.entity.PartEntity;
-import io.github.fabricators_of_create.porting_lib.registry.LazyRegistrar;
+import io.github.fabricators_of_create.porting_lib.features.registry.LazyRegistrar;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
@@ -74,9 +74,8 @@ public class CMDCam implements ModInitializer {
     }
 
     public void onInitialize() {
-        initPartEntity();
+        this.initPartEntity();
         this.init();
-
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             commands(dispatcher);

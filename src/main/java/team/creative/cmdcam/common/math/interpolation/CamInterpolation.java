@@ -4,6 +4,7 @@ import java.util.List;
 
 import team.creative.cmdcam.common.scene.CamScene;
 import team.creative.cmdcam.common.scene.attribute.CamAttribute;
+import team.creative.cmdcam.common.utils.EnvExecutor;
 import team.creative.creativecore.common.util.math.interpolation.Interpolation;
 import team.creative.creativecore.common.util.math.vec.VecNd;
 import team.creative.creativecore.common.util.registry.NamedHandlerRegistry;
@@ -20,8 +21,8 @@ public abstract class CamInterpolation {
         REGISTRY.register("cubic", new CubicCamInterpolation());
         REGISTRY.registerDefault("hermite", HERMITE = new HermiteCamInterpolation());
         REGISTRY.register("cosine", new SmoothCamInterpolation());
-        REGISTRY.register("circular", new CircularCamInterpolation(true));
-        REGISTRY.register("invcircular", new CircularCamInterpolation(false));
+        REGISTRY.register("circular", EnvExecutor.safeCallWhenOn(() -> () -> new ClientCircularCamInterpolation(true), () -> () -> new CircularCamInterpolation(true)));
+        REGISTRY.register("invcircular", EnvExecutor.safeCallWhenOn(() -> () -> new ClientCircularCamInterpolation(false), () -> () -> new CircularCamInterpolation(false)));
     }
     
     public boolean isRenderingEnabled = false;

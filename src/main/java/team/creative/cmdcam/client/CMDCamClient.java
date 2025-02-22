@@ -70,7 +70,7 @@ public class CMDCamClient implements ClientModInitializer {
     }
 
     public void onInitializeClient() {
-        initPartEntity();
+        this.initPartEntity();
         new CamEventHandlerClient();
         CreativeCoreClient.registerClientConfig(CMDCam.MODID);
         //ModLoadingContext.get().registerExtensionPoint(IExtensionPoint.DisplayTest.class,

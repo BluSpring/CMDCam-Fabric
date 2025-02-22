@@ -9,6 +9,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 @Environment(EnvType.CLIENT)
 @Mixin(Minecraft.class)
 public interface MinecraftAccessor {
-	@Accessor("pausePartialTick")
-	float port_lib$pausePartialTick();
+    @Accessor("pausePartialTick")
+    float port_lib$pausePartialTick();
 }

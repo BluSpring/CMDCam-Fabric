@@ -6,7 +6,8 @@
     "description": "Create camera paths.",
     "authors": [
         "CreativeMD",
-        "BluSpring"
+        "BluSpring",
+        "singlerr"
     ],
     "contact": {
         "repo": "https://github.com/BluSpring/CMDCam-Fabric"

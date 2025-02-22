@@ -15,38 +15,38 @@ import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(Camera.class)
 public abstract class CameraMixin implements CameraExtensions {
-	@Shadow
-	private float yRot;
+    @Shadow
+    private float yRot;
 
-	@Shadow
-	private float xRot;
+    @Shadow
+    private float xRot;
 
-	@Shadow
-	private boolean initialized;
+    @Shadow
+    private boolean initialized;
 
-	@Shadow
-	private BlockGetter level;
+    @Shadow
+    private BlockGetter level;
 
-	@Shadow
-	@Final
-	private BlockPos.MutableBlockPos blockPosition;
+    @Shadow
+    @Final
+    private BlockPos.MutableBlockPos blockPosition;
 
-	@Shadow
-	private Vec3 position;
+    @Shadow
+    private Vec3 position;
 
-	@Unique
-	@Override
-	public void setAnglesInternal(float yaw, float pitch) {
-		this.yRot = yaw;
-		this.xRot = pitch;
-	}
+    @Unique
+    @Override
+    public void setAnglesInternal(float yaw, float pitch) {
+        this.yRot = yaw;
+        this.xRot = pitch;
+    }
 
-	@Unique
-	@Override
-	public BlockState getBlockAtCamera() {
-		if (!this.initialized)
-			return Blocks.AIR.defaultBlockState();
-		else
-			return ((BlockStateExtensions) this.level.getBlockState(this.blockPosition)).getStateAtViewpoint(this.level, this.blockPosition, this.position);
-	}
+    @Unique
+    @Override
+    public BlockState getBlockAtCamera() {
+        if (!this.initialized)
+            return Blocks.AIR.defaultBlockState();
+        else
+            return ((BlockStateExtensions) this.level.getBlockState(this.blockPosition)).getStateAtViewpoint(this.level, this.blockPosition, this.position);
+    }
 }

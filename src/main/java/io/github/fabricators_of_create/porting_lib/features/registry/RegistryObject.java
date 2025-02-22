@@ -1,4 +1,4 @@
-package io.github.fabricators_of_create.porting_lib.registry;
+package io.github.fabricators_of_create.porting_lib.features.registry;
 
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
