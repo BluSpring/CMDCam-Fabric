@@ -146,7 +146,7 @@ public abstract class CamTarget {
         public Component print(Level level) {
             Entity resultEntity = null;
             if (level instanceof ServerLevel)
-                resultEntity = ((ServerLevel) level).getEntities().get(uuid);
+                resultEntity = ((ServerLevelAccessor) level).callGetEntities().get(uuid);
             else
                 for (Entity entity : ((ClientLevel) level).entitiesForRendering())
                     if (entity.getUUID().equals(uuid)) {
