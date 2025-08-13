@@ -27,10 +27,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 import team.creative.cmdcam.client.mixin.GameRendererAccessor;
-import team.creative.cmdcam.client.mixin.MinecraftAccessor;
 import team.creative.cmdcam.client.mixin.MinecraftServerAccessor;
 import team.creative.cmdcam.common.math.interpolation.CamInterpolation;
 import team.creative.cmdcam.common.math.point.CamPoint;
@@ -133,7 +132,7 @@ public class CamEventHandlerClient {
         }
         
         renderingHand = false;
-        var renderTickTime = MC.isPaused() ? ((MinecraftAccessor) MC).getPausePartialTick() : ((MinecraftAccessor) MC).getTimer().partialTick;
+        var renderTickTime = MC.getTimer().getGameTimeDeltaPartialTick(true);
         
         if (MC.player != null && MC.level != null) {
             if (!MC.isPaused()) {
@@ -146,7 +145,7 @@ public class CamEventHandlerClient {
                     CMDCamClient.renderTickPath(MC.level, renderTickTime);
                 } else {
                     CMDCamClient.noTickPath(MC.level, renderTickTime);
-                    double timeFactor = MC.getDeltaFrameTime();
+                    double timeFactor = MC.getTimer().getGameTimeDeltaTicks();
                     double vanillaFov = fovExactVanilla(renderTickTime);
                     double currentFov = vanillaFov + fov;
                     double x = calculatePointInCurve(currentFov);
@@ -259,11 +258,11 @@ public class CamEventHandlerClient {
         Vec3 view = MC.gameRenderer.getMainCamera().getPosition();
         
         RenderSystem.setProjectionMatrix(ctx.projectionMatrix(), VertexSorting.ORTHOGRAPHIC_Z);
-        PoseStack mat = RenderSystem.getModelViewStack();
-        mat.pushPose();
-        mat.setIdentity();
-        mat.mulPoseMatrix(ctx.matrixStack().last().pose());
-        mat.translate(-view.x(), -view.y(), -view.z());
+        Matrix4fStack mat = RenderSystem.getModelViewStack();
+        mat.pushMatrix();
+        mat.identity();
+        mat.mul(ctx.matrixStack().last().pose());
+        mat.translate((float) -view.x(), (float) -view.y(), (float) -view.z());
         
         RenderSystem.applyModelViewMatrix();
         
@@ -271,8 +270,17 @@ public class CamEventHandlerClient {
         
         if (CMDCamClient.hasTargetMarker()) {
             CamPoint point = CMDCamClient.getTargetMarker();
-            renderHitbox(mat, MC.renderBuffers().bufferSource().getBuffer(RenderType.lines()),
-                new AABB(point.x - 0.3, point.y - 1.62, point.z - 0.3, point.x + 0.3, point.y + 0.18, point.z + 0.3), MC.player.getEyeHeight(), point, point.calculateViewVector());
+            PoseStack ps = ctx.matrixStack();
+            ps.pushPose();
+            ps.translate(-view.x(), -view.y(), -view.z());
+            renderHitbox(ps,
+                    MC.renderBuffers().bufferSource().getBuffer(RenderType.lines()),
+                    new AABB(point.x - 0.3, point.y - 1.62, point.z - 0.3,
+                            point.x + 0.3, point.y + 0.18, point.z + 0.3),
+                    MC.player.getEyeHeight(),
+                    point,
+                    point.calculateViewVector());
+            ps.popPose();
         }
         
         boolean shouldRender = false;
@@ -302,7 +310,7 @@ public class CamEventHandlerClient {
             MC.renderBuffers().bufferSource().endLastBatch();
             
             try {
-                mat.pushPose();
+                mat.pushMatrix();
                 //if (CMDCamClient.hasTargetMarker())
                 //mat.translate(CMDCamClient.getTargetMarker().x, CMDCamClient.getTargetMarker().y, CMDCamClient.getTargetMarker().z);
                 CamScene scene = CMDCamClient.createScene();
@@ -310,12 +318,12 @@ public class CamEventHandlerClient {
                     if (movement.isRenderingEnabled || (SHOW_ACTIVE_INTERPOLATION && movement == CMDCamClient.getConfigScene().interpolation))
                         renderPath(pose, movement, scene);
                     
-                mat.popPose();
+                mat.popMatrix();
             } catch (SceneException e) {}
             
         }
         
-        mat.popPose();
+        mat.popMatrix();
         
         RenderSystem.applyModelViewMatrix();
         RenderSystem.depthMask(true);
@@ -352,11 +360,11 @@ public class CamEventHandlerClient {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         
         Tesselator tessellator = Tesselator.getInstance();
-        BufferBuilder bufferbuilder = tessellator.getBuilder();
+//        BufferBuilder bufferbuilder = tessellator.getBuilder();
         
         RenderSystem.lineWidth(1.0F);
         Vec3d color = inter.color.toVec();
-        bufferbuilder.begin(Mode.DEBUG_LINE_STRIP, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder bufferbuilder = tessellator.begin(Mode.DEBUG_LINE_STRIP, DefaultVertexFormat.POSITION_COLOR);
         CamPoints points = new CamPoints(scene.points);
         
         if (scene.lookTarget != null)
@@ -370,14 +378,19 @@ public class CamEventHandlerClient {
             Vec3d pos = interpolation.valueAt(i / steps);
             if (CMDCamClient.hasTargetMarker())
                 pos.add(CMDCamClient.getTargetMarker());
-            bufferbuilder.vertex((float) pos.x, (float) pos.y, (float) pos.z).color((float) color.x, (float) color.y, (float) color.z, 1).endVertex();
+            bufferbuilder.addVertex((float) pos.x, (float) pos.y, (float) pos.z).setColor((float) color.x, (float) color.y, (float) color.z, 1);
         }
         Vec3d last = interpolation.valueAt(1);
         if (CMDCamClient.hasTargetMarker())
             last.add(CMDCamClient.getTargetMarker());
-        bufferbuilder.vertex((float) last.x, (float) last.y, (float) last.z).color((float) color.x, (float) color.y, (float) color.z, 1).endVertex();
-        
-        tessellator.end();
+        bufferbuilder.addVertex((float) last.x, (float) last.y, (float) last.z).setColor((float) color.x, (float) color.y, (float) color.z, 1);
+
+        try {
+            MeshData mesh = bufferbuilder.build();
+            if (mesh != null) {
+                BufferUploader.drawWithShader(mesh);
+            }
+        } catch (NullPointerException ignored) {}
         
         if (scene.lookTarget != null)
             scene.lookTarget.finish();
@@ -391,13 +404,13 @@ public class CamEventHandlerClient {
         float f = 0.01F;
         LevelRenderer.renderLineBox(pMatrixStack, pBuffer, aabb.minX, aabb.minY + (eyeHeight - f), aabb.minZ, aabb.maxX, aabb.minY + (eyeHeight + f), aabb.maxZ, 1.0F, 0.0F, 0.0F,
             1.0F);
-        
-        Matrix4f matrix4f = pMatrixStack.last().pose();
-        Matrix3f matrix3f = pMatrixStack.last().normal();
-        pBuffer.vertex(matrix4f, (float) origin.x, (float) origin.y, (float) origin.z).color(0, 0, 255, 255).normal(matrix3f, (float) view.x, (float) view.y, (float) view.z)
-                .endVertex();
-        pBuffer.vertex(matrix4f, (float) (origin.x + view.x * 2), (float) (origin.y + view.y * 2), (float) (origin.z + view.z * 2)).color(0, 0, 255, 255).normal(matrix3f,
-            (float) view.x, (float) view.y, (float) view.z).endVertex();
+
+        PoseStack.Pose pose = pMatrixStack.last();
+        Matrix4f matrix4f = pose.pose();
+
+        pBuffer.addVertex(matrix4f, (float) origin.x, (float) origin.y, (float) origin.z).setColor(0, 0, 255, 255).setNormal(pose, (float) view.x, (float) view.y, (float) view.z);
+        pBuffer.addVertex(matrix4f, (float) (origin.x + view.x * 2), (float) (origin.y + view.y * 2), (float) (origin.z + view.z * 2)).setColor(0, 0, 255, 255).setNormal(pose,
+            (float) view.x, (float) view.y, (float) view.z);
     }
 
     public static void cameraRoll(ComputeCameraAnglesCallback event) {

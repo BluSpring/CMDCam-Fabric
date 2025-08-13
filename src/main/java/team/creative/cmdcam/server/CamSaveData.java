@@ -4,8 +4,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.saveddata.SavedData;
+import org.jetbrains.annotations.NotNull;
 import team.creative.cmdcam.CMDCam;
 import team.creative.cmdcam.common.scene.CamScene;
 import team.creative.creativecore.common.util.registry.exception.RegistryException;
@@ -14,7 +16,7 @@ public class CamSaveData extends SavedData {
     
     public static final String DATA_NAME = CMDCam.MODID + "_Scenes";
     
-    private HashMap<String, CamScene> scenes = new HashMap<>();
+    private final HashMap<String, CamScene> scenes = new HashMap<>();
     
     public CamSaveData(CompoundTag nbt) {
         for (String key : nbt.getAllKeys())
@@ -48,7 +50,7 @@ public class CamSaveData extends SavedData {
     }
     
     @Override
-    public CompoundTag save(CompoundTag nbt) {
+    public @NotNull CompoundTag save(@NotNull CompoundTag nbt, HolderLookup.@NotNull Provider provider) {
         for (Entry<String, CamScene> entry : scenes.entrySet())
             nbt.put(entry.getKey(), entry.getValue().save(new CompoundTag()));
         return nbt;

@@ -3,7 +3,7 @@ package team.creative.cmdcam.client;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import io.github.fabricators_of_create.porting_lib.event.client.FieldOfViewEvents;
-import io.github.fabricators_of_create.porting_lib.event.client.RenderTickStartCallback;
+import io.github.fabricators_of_create.porting_lib.event.client.RenderFrameEvent;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -20,7 +20,6 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import team.creative.cmdcam.CMDCam;
-import team.creative.cmdcam.client.mixin.MinecraftAccessor;
 import team.creative.cmdcam.client.mixin.MinecraftServerAccessor;
 import team.creative.cmdcam.common.command.argument.InterpolationArgument;
 import team.creative.cmdcam.common.command.builder.client.ClientPointArgumentBuilder;
@@ -400,7 +399,7 @@ public class CMDCamClient implements ClientModInitializer {
         mc.player.getAbilities().flying = true;
         
         CamEventHandlerClient.roll((float) point.roll);
-        var partialTick = mc.isPaused() ? ((MinecraftAccessor) mc).getPausePartialTick() : ((MinecraftAccessor) mc).getTimer().partialTick;
+        var partialTick = mc.getTimer().getGameTimeDeltaPartialTick(true);
         CamEventHandlerClient.fov(point.zoom - CamEventHandlerClient.fovExactVanilla(partialTick));
         mc.player.absMoveTo(point.x, point.y, point.z, (float) point.rotationYaw, (float) point.rotationPitch);
         mc.player.absMoveTo(point.x, point.y - mc.player.getEyeHeight(), point.z, (float) point.rotationYaw, (float) point.rotationPitch);

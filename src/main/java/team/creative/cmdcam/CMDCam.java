@@ -17,7 +17,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import team.creative.cmdcam.client.mixin.ArgumentTypeInfosAccessor;
@@ -38,13 +37,12 @@ import team.creative.creativecore.common.network.CreativePacket;
 import java.util.Collection;
 import java.util.function.Supplier;
 
-@Mod(value = CMDCam.MODID)
 public class CMDCam implements ModInitializer {
     
     public static final String MODID = "cmdcam";
     
     private static final Logger LOGGER = LogManager.getLogger(CMDCam.MODID);
-    public static final CreativeNetwork NETWORK = new CreativeNetwork(1, LOGGER, new ResourceLocation(CMDCam.MODID, "main"));
+    public static final CreativeNetwork NETWORK = new CreativeNetwork(1, LOGGER, ResourceLocation.fromNamespaceAndPath(CMDCam.MODID, "main"));
     public static final CMDCamConfig CONFIG = new CMDCamConfig();
     
     private void commands(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -104,7 +102,7 @@ public class CMDCam implements ModInitializer {
     }
 
     private <A extends ArgumentType<?>, T extends ArgumentTypeInfo.Template<A>, I extends ArgumentTypeInfo<A, T>> void register(String id, Supplier<I> supplier) {
-        Registry.register(BuiltInRegistries.COMMAND_ARGUMENT_TYPE, new ResourceLocation(MODID, id), supplier.get());
+        Registry.register(BuiltInRegistries.COMMAND_ARGUMENT_TYPE, ResourceLocation.fromNamespaceAndPath(MODID, id), supplier.get());
     }
 
     @Override
