@@ -20,8 +20,13 @@ public class GameRendererMixin {
         var event = new ComputeCameraAnglesCallback((GameRenderer) (Object) this, camera, partialTicks, camera.getYRot(), camera.getXRot(), 0);
         ComputeCameraAnglesCallback.EVENT.invoker().onComputeCameraAngles(event);
 
-        camera.setAnglesInternal(event.getYaw(), event.getPitch());
-
-        matrixStack.mulPose(Axis.ZP.rotationDegrees(event.getRoll()));
+    @ModifyReturnValue(
+            method = "getFov",
+            at = @At(value = "RETURN", ordinal = 1) // skip the early exit
+    )
+    private double port_lib$modifyFov(double fov,
+                                      Camera camera, float partialTicks, boolean usedFovSetting) {
+        // returns original if not changed, this is safe
+        return FieldOfViewEvents.COMPUTE.invoker().getFov((GameRenderer) (Object) this, camera, partialTicks, usedFovSetting, fov);
     }
 }

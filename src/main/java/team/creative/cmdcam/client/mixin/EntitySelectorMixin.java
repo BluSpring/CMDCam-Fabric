@@ -1,7 +1,7 @@
 package team.creative.cmdcam.client.mixin;
 
-import com.google.common.collect.Lists;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -10,6 +10,7 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.entity.EntityTypeTest;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -29,7 +30,7 @@ import java.util.function.Predicate;
 
 @Mixin(EntitySelector.class)
 public abstract class EntitySelectorMixin implements EntitySelectorClient {
-    
+
     @Shadow
     @Final
     private int maxResults;
@@ -41,7 +42,7 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
     private boolean worldLimited;
     @Shadow
     @Final
-    private Predicate<Entity> predicate;
+    private List<Predicate<Entity>> contextFreePredicates;
     @Shadow
     @Final
     private MinMaxBounds.Doubles range;
@@ -79,21 +80,25 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
             throw EntityArgument.ERROR_SELECTORS_NOT_ALLOWED.create();
         }
     }
-    
+
     @Shadow
-    private Predicate<Entity> getPredicate(Vec3 vec) {
+    @Nullable
+    private AABB getAbsoluteAabb(Vec3 vec) {
         return null;
     }
-    
+
     @Shadow
-    public abstract boolean isWorldLimited();
-    
+    private Predicate<Entity> getPredicate(Vec3 vec, @Nullable AABB aabb, @Nullable FeatureFlagSet featureFlags) {
+        return null;
+    }
+
+    @Shadow
+    protected abstract void checkPermissions(CommandSourceStack commandSourceStack) throws CommandSyntaxException;
+
     @Shadow
     private <T extends Entity> List<T> sortAndLimit(Vec3 vec, List<T> list) {
         return null;
     }
-
-    @Shadow protected abstract void checkPermissions(CommandSourceStack commandSourceStack) throws CommandSyntaxException;
 
     @Override
     public Entity findSingleEntityClient(FabricClientCommandSource source) throws CommandSyntaxException {
@@ -105,7 +110,7 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
             throw EntityArgument.ERROR_NOT_SINGLE_ENTITY.create();
         return list.get(0);
     }
-    
+
     @Override
     public List<? extends Entity> findEntitiesClient(FabricClientCommandSource source) throws CommandSyntaxException {
         this.checkPermissionsClient(source);
@@ -114,41 +119,36 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
         else if (this.playerName != null) {
             for (Player player : source.getWorld().players())
                 if (player.getGameProfile().getName().equalsIgnoreCase(playerName))
-                    return Lists.newArrayList(player);
-            return Collections.emptyList();
+                    return List.of(player);
+            return List.of();
         } else if (this.entityUUID != null) {
             ClientLevel level = (ClientLevel) source.getWorld();
             for (Entity entity : level.entitiesForRendering())
                 if (entity.getUUID().equals(entityUUID))
-                    return Lists.newArrayList(entity);
-            return Collections.emptyList();
+                    return List.of(entity);
+            return List.of();
         }
-        
+
         Vec3 vec3 = this.position.apply(source.getPosition());
-        Predicate<Entity> predicate = this.getPredicate(vec3);
+        AABB aabb = this.getAbsoluteAabb(vec3);
+        Predicate<Entity> predicate = this.getPredicate(vec3, aabb, null);
         if (this.currentEntity)
-            return (source.getEntity() != null && predicate.test(source.getEntity()) ? Lists.newArrayList(source.getEntity()) : Collections.emptyList());
-        List<Entity> list = Lists.newArrayList();
-        
+            return (source.getEntity() != null && predicate.test(source.getEntity()) ? List.of(source.getEntity()) : List.of());
+        List<Entity> list = new ObjectArrayList<>();
+
         ClientLevel level = source.getWorld();
-        
-        if (this.aabb != null)
-            list.addAll(level.getEntities(this.type, this.aabb.move(vec3), predicate));
+
+        if (aabb != null)
+            list.addAll(level.getEntities(this.type, aabb, predicate));
         else {
             for (Entity entity : level.entitiesForRendering()) {
                 if (predicate.test(entity))
                     list.add(entity);
-                
-                /*for (PartEntity<?> p : level.getPartEntities()) {
-                    Entity t = type.tryCast(p);
-                    if (t != null && predicate.test(t))
-                        list.add(t);
-                }*/
             }
         }
         return this.sortAndLimit(vec3, list);
     }
-    
+
     @Override
     public Player findSinglePlayerClient(FabricClientCommandSource source) throws CommandSyntaxException {
         this.checkPermissionsClient(source);
@@ -157,33 +157,34 @@ public abstract class EntitySelectorMixin implements EntitySelectorClient {
             throw EntityArgument.NO_PLAYERS_FOUND.create();
         return list.get(0);
     }
-    
+
     @Override
     public List<Player> findPlayersClient(FabricClientCommandSource source) throws CommandSyntaxException {
         this.checkPermissionsClient(source);
         if (this.playerName != null) {
             for (Player player : source.getWorld().players())
                 if (player.getGameProfile().getName().equalsIgnoreCase(playerName))
-                    return Lists.newArrayList(player);
-            return Collections.emptyList();
+                    return List.of(player);
+            return List.of();
         } else if (this.entityUUID != null) {
             Player player = source.getWorld().getPlayerByUUID(entityUUID);
-            return player == null ? Collections.emptyList() : Lists.newArrayList(player);
+            return player == null ? List.of() : List.of(player);
         }
-        
+
         Vec3 vec3 = this.position.apply(source.getPosition());
-        Predicate<Entity> predicate = this.getPredicate(vec3);
+        AABB aabb = this.getAbsoluteAabb(vec3);
+        Predicate<Entity> predicate = this.getPredicate(vec3, aabb, null);
         if (this.currentEntity) {
             if (source.getEntity() instanceof Player player && predicate.test(player))
-                return Lists.newArrayList(player);
-            return Collections.emptyList();
+                return List.of(player);
+            return List.of();
         }
-        
-        List<Player> list = Lists.newArrayList();
+
+        List<Player> list = new ObjectArrayList<>();
         for (Player player : source.getWorld().players())
             if (predicate.test(player))
                 list.add(player);
-            
+
         return this.sortAndLimit(vec3, list);
     }
 }

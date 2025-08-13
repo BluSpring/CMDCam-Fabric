@@ -7,7 +7,6 @@
   "mixins": [
     "ArgumentTypeInfosAccessor",
     "LocalCoordinatesAccessor",
-    "MinecraftAccessor",
     "MinecraftServerAccessor",
     "ServerLevelAccessor",
     "WorldCoordinatesAccessor"
@@ -18,6 +17,7 @@
     "EntitySelectorMixin",
     "GameRendererAccessor",
     "GameRendererMixin",
+    "MinecraftMixin",
     "MouseOverMixin"
   ],
   "minVersion": "0.8"

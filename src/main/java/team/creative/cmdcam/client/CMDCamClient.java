@@ -69,8 +69,11 @@ public class CMDCamClient implements ClientModInitializer {
 
     private static void registerEvents() {
         ClientTickEvents.START_CLIENT_TICK.register(CamEventHandlerClient::onClientTick);
-        RenderTickStartCallback.EVENT.register(CamEventHandlerClient::onRenderTick);
+
+        // portlib events
+        RenderFrameEvent.PRE.register(deltaTracker -> CamEventHandlerClient.onRenderTick());
         FieldOfViewEvents.COMPUTE.register(CamEventHandlerClient::fov);
+
         WorldRenderEvents.AFTER_ENTITIES.register(CamEventHandlerClient::worldRender);
 
         ComputeCameraAnglesCallback.EVENT.register(CamEventHandlerClient::cameraRoll);
