@@ -12,6 +12,9 @@ import net.minecraft.network.chat.Component;
 import team.creative.cmdcam.client.CMDCamClient;
 import team.creative.cmdcam.common.command.CamCommandProcessor;
 import team.creative.cmdcam.common.command.argument.*;
+import team.creative.cmdcam.common.command.builder.FollowArgumentBuilder;
+import team.creative.cmdcam.common.command.builder.PointArgumentBuilder;
+import team.creative.cmdcam.common.command.builder.TargetArgumentBuilder;
 import team.creative.cmdcam.common.math.interpolation.CamInterpolation;
 import team.creative.cmdcam.common.math.interpolation.CamPitchMode;
 import team.creative.cmdcam.common.scene.CamScene;
@@ -61,21 +64,33 @@ public class ClientSceneCommandBuilder {
             return 0;
         })));
 
-        origin.then(ClientCommandManager.literal("duration").then(ClientCommandManager.argument("duration", DurationArgument.duration()).executes(x -> {
+        origin.then(ClientCommandManager.literal("duration").executes(x -> {
+            x.getSource().sendFeedback(Component.translatable("scene.output.duration", DurationArgument.printDuration(processor.getScene(x).duration)));
+            return 0;
+        }).then(ClientCommandManager.argument("duration", DurationArgument.duration()).executes(x -> {
             long duration = DurationArgument.getDuration(x, "duration");
             if (duration > 0)
                 processor.getScene(x).duration = duration;
             processor.markDirty(x);
-            x.getSource().sendFeedback(Component.translatable("scene.duration", duration));
+            x.getSource().sendFeedback(Component.translatable("scene.duration", DurationArgument.printDuration(duration)));
             return 0;
         })));
 
-        origin.then(ClientCommandManager.literal("loops").then(ClientCommandManager.argument("loop", IntegerArgumentType.integer(-1)).executes(x -> {
+        origin.then(ClientCommandManager.literal("loops").executes(x -> {
+            int loop = processor.getScene(x).loop;
+            if (loop == 0)
+                x.getSource().sendFeedback(Component.translatable("scene.output.no_loop"));
+            else if (loop < 0)
+                x.getSource().sendFeedback(Component.translatable("scene.output.endless"));
+            else
+                x.getSource().sendFeedback(Component.translatable("scene.output.loops", loop));
+            return 0;
+        }).then(ClientCommandManager.argument("loop", IntegerArgumentType.integer(-1)).executes(x -> {
             int loop = IntegerArgumentType.getInteger(x, "loop");
             processor.getScene(x).loop = loop;
             processor.markDirty(x);
             if (loop == 0)
-                x.getSource().sendFeedback(Component.translatable("scene.add", processor.getScene(x).points.size()));
+                x.getSource().sendFeedback(Component.translatable("scene.loop", processor.getScene(x).points.size()));
             else if (loop < 0)
                 x.getSource().sendFeedback(Component.translatable("scene.loops.endless"));
             else
@@ -102,8 +117,12 @@ public class ClientSceneCommandBuilder {
         else
             origin.then(tpO);
 
-        origin.then(ClientCommandManager.literal("mode").then(ClientCommandManager.argument("mode", CamModeArgument.mode()).executes(x -> {
+        origin.then(ClientCommandManager.literal("mode").executes(x -> {
+            x.getSource().sendFeedback(Component.translatable("scene.output.mode", processor.getScene(x).mode.title()));
+            return 0;
+        }).then(ClientCommandManager.argument("mode", CamModeArgument.mode()).executes(x -> {
             processor.getScene(x).setMode(StringArgumentType.getString(x, "mode"));
+            x.getSource().sendFeedback(Component.translatable("scene.mode", processor.getScene(x).mode.title()));
             return 0;
         })));
 
@@ -113,15 +132,33 @@ public class ClientSceneCommandBuilder {
         origin.then(new ClientFollowArgumentBuilder(CamAttribute.PITCH, processor)).then(new ClientFollowArgumentBuilder(CamAttribute.YAW, processor)).then(
             new ClientFollowArgumentBuilder(CamAttribute.POSITION, processor));
 
-        origin.then(ClientCommandManager.literal("interpolation").then(ClientCommandManager.argument("interpolation", InterpolationArgument.interpolation()).executes((x) -> {
+        origin.then(ClientCommandManager.literal("interpolation").executes((x) -> {
+            x.getSource().sendFeedback(Component.translatable("scene.output.interpolation", processor.getScene(x).interpolation.title()));
+            return 0;
+        }).then(ClientCommandManager.argument("interpolation", InterpolationArgument.interpolation()).executes((x) -> {
             String interpolation = StringArgumentType.getString(x, "interpolation");
             processor.getScene(x).interpolation = CamInterpolation.REGISTRY.get(interpolation);
             processor.markDirty(x);
-            x.getSource().sendFeedback(Component.translatable("scene.interpolation", interpolation));
+            x.getSource().sendFeedback(Component.translatable("scene.interpolation", processor.getScene(x).interpolation.title()));
             return 0;
         })));
 
-        origin.then(ClientCommandManager.literal("spinning_fix").then(ClientCommandManager.argument("mode", CamPitchModeArgument.pitchMode()).executes((x) -> {
+        origin.then(ClientCommandManager.literal("smooth_start").executes((x) -> {
+            x.getSource().sendFeedback(Component.translatable("scene.output.smooth_beginning", processor.getScene(x).smoothBeginning ? Component.translatable(
+                "cam.enabled") : Component.translatable("cam.disabled")));
+            return 0;
+        }).then(ClientCommandManager.argument("value", BoolArgumentType.bool()).executes((x) -> {
+            boolean value = BoolArgumentType.getBool(x, "value");
+            processor.getScene(x).smoothBeginning = value;
+            processor.markDirty(x);
+            x.getSource().sendFeedback(Component.translatable("scene.smooth_beginning", value));
+            return 0;
+        })));
+
+        origin.then(ClientCommandManager.literal("spinning_fix").executes((x) -> {
+            x.getSource().sendFeedback(Component.translatable("scene.output.pitch_mode", processor.getScene(x).pitchMode.title()));
+            return 0;
+        }).then(ClientCommandManager.argument("mode", CamPitchModeArgument.pitchMode()).executes((x) -> {
             CamPitchMode mode = CamPitchModeArgument.getMode(x, "mode");
             processor.getScene(x).pitchMode = mode;
             processor.markDirty(x);
@@ -129,7 +166,11 @@ public class ClientSceneCommandBuilder {
             return 0;
         })));
 
-        origin.then(ClientCommandManager.literal("distance_timing").then(ClientCommandManager.argument("value", BoolArgumentType.bool()).executes((x) -> {
+        origin.then(ClientCommandManager.literal("distance_timing").executes((x) -> {
+            x.getSource().sendFeedback(Component.translatable("scene.output.distance_timing", processor.getScene(x).distanceBasedTiming ? Component.translatable(
+                "cam.enabled") : Component.translatable("cam.disabled")));
+            return 0;
+        }).then(ClientCommandManager.argument("value", BoolArgumentType.bool()).executes((x) -> {
             boolean value = BoolArgumentType.getBool(x, "value");
             processor.getScene(x).distanceBasedTiming = value;
             processor.markDirty(x);
@@ -137,77 +178,8 @@ public class ClientSceneCommandBuilder {
             return 0;
         })));
 
-        origin.then(ClientCommandManager.literal("smooth_start")
-                .then(ClientCommandManager.argument("value", BoolArgumentType.bool())
-                        .executes((context) -> setSmoothStart(BoolArgumentType.getBool(context, "value"), "default", processor, context))
-                        .then(ClientCommandManager.argument("mode", new SceneSwitchArgument())
-                                .executes((context) -> setSmoothStart(BoolArgumentType.getBool(context, "value"),
-                                        StringArgumentType.getString(context, "mode"), processor, context))
-                        )
-                )
-        );
-
-        origin.then(ClientCommandManager.literal("reset_scenes").executes((x) -> {
-            processor.markDirty(x);
-            CMDCamClient.resetScenes();
-            x.getSource().sendFeedback(Component.translatable("scene.reset"));
-            return 0;
-        }));
-
-        origin.then(ClientCommandManager.literal("save_scenes")
-                .executes((x) -> saveScenes("default", x))
-                .then(ClientCommandManager.argument("name", StringArgumentType.string())
-                        .executes((x) -> saveScenes(StringArgumentType.getString(x, "name"), x))));
-
-        origin.then(ClientCommandManager.literal("load_scenes")
-                .executes((x) -> loadScenes("default", x))
-                .then(ClientCommandManager.argument("name", StringArgumentType.string())
-                        .executes((x) -> loadScenes(StringArgumentType.getString(x, "name"), x))));
-
         if (processor.requiresSceneName())
             original.then(origin);
 
-    }
-
-    public static int saveScenes(String name, CommandContext<FabricClientCommandSource> context) {
-        if (name == null || name.isBlank()) {
-            name = "default";
-        }
-
-        if (!CMDCamClient.saveScenes(name)) {
-            context.getSource().sendError(Component.translatable("scene.save.error"));
-            return -1;
-        }
-
-        context.getSource().sendFeedback(Component.translatable("scene.save.success"));
-        return 0;
-    }
-
-    public static int loadScenes(String name, CommandContext<FabricClientCommandSource> context) {
-        if (name == null || name.isBlank()) {
-            name = "default";
-        }
-
-        if (!CMDCamClient.loadScenes(name)) {
-            context.getSource().sendError(Component.translatable("scene.load.error"));
-            return -1;
-        }
-
-        context.getSource().sendFeedback(Component.translatable("scene.load.success"));
-        return 0;
-    }
-
-    public static int setSmoothStart(boolean value, String mode, CamCommandProcessor<FabricClientCommandSource> processor, CommandContext<FabricClientCommandSource> context) {
-        if (mode.equals("default")) {
-            processor.getScene(context).smoothBeginning = value;
-        } else if (mode.equals("all")) {
-            CMDCamClient.setSmoothStart(value);
-        } else {
-            CMDCamClient.setSmoothStart(value, Integer.parseInt(mode));
-        }
-
-        processor.markDirty(context);
-        context.getSource().sendFeedback(Component.translatable("scene.smooth_beginning", value));
-        return 0;
     }
 }

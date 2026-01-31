@@ -104,7 +104,7 @@ public class PointArgumentBuilder extends ArgumentBuilder<CommandSourceStack, Po
                     CamScene scene = processor.getScene(x);
                     if (scene.posTarget != null)
                         try {
-                            processor.makeRelative(processor.getScene(x), x.getSource().getUnsidedLevel(), point);
+                            processor.makeRelative(processor.getScene(x), x.getSource().getLevel(), point);
                         } catch (SceneException e) {
                             x.getSource().sendFailure(e.getComponent());
                         }
@@ -119,7 +119,7 @@ public class PointArgumentBuilder extends ArgumentBuilder<CommandSourceStack, Po
                     CamScene scene = processor.getScene(x);
                     if (scene.posTarget != null)
                         try {
-                            processor.makeRelative(processor.getScene(x), x.getSource().getUnsidedLevel(), point);
+                            processor.makeRelative(processor.getScene(x), x.getSource().getLevel(), point);
                         } catch (SceneException e) {
                             x.getSource().sendFailure(e.getComponent());
                         }

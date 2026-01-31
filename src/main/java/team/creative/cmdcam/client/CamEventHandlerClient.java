@@ -3,6 +3,13 @@ package team.creative.cmdcam.client;
 import java.util.ArrayList;
 import java.util.function.Consumer;
 
+import io.github.fabricators_of_create.porting_lib.client_events.event.client.ViewportEvent;
+import io.github.fabricators_of_create.porting_lib.entity.events.player.PlayerInteractEvent;
+import io.github.fabricators_of_create.porting_lib.event.client.RenderFrameEvent;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.minecraft.client.DeltaTracker;
 import org.joml.Matrix4f;
 
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -28,16 +35,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.RenderFrameEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage;
-import net.neoforged.neoforge.client.event.ViewportEvent.ComputeCameraAngles;
-import net.neoforged.neoforge.client.event.ViewportEvent.ComputeFov;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickBlock;
 import team.creative.cmdcam.client.mixin.GameRendererAccessor;
 import team.creative.cmdcam.common.math.interpolation.CamInterpolation;
 import team.creative.cmdcam.common.math.point.CamPoint;
@@ -108,9 +105,18 @@ public class CamEventHandlerClient {
     public static void fov(double fov) {
         CamEventHandlerClient.fov = fov;
     }
-    
-    @SubscribeEvent
-    public void onClientTick(ClientTickEvent.Pre event) {
+
+    public CamEventHandlerClient() {
+        ClientTickEvents.START_CLIENT_TICK.register(client -> onClientTick());
+        RenderFrameEvent.PRE.register(this::onRenderTick);
+        ViewportEvent.ComputeFov.EVENT.register(this::fov);
+        WorldRenderEvents.AFTER_ENTITIES.register(this::worldRender);
+        ViewportEvent.ComputeCameraAngles.EVENT.register(this::cameraRoll);
+        PlayerInteractEvent.EntityInteract.EVENT.register(this::onPlayerInteract);
+        PlayerInteractEvent.RightClickBlock.EVENT.register(this::onPlayerInteract);
+    }
+
+    public void onClientTick() {
         if (MC.player != null && MC.level != null && !MC.isPaused() && CMDCamClient.isPlaying())
             CMDCamClient.gameTickPath(MC.level);
     }
@@ -129,16 +135,15 @@ public class CamEventHandlerClient {
             return MAX_FOV;
         return (Math.sin((x - 0.5) * Math.PI) + 1) * FOV_RANGE_HALF + MIN_FOV;
     }
-    
-    @SubscribeEvent
-    public void onRenderTick(RenderFrameEvent.Pre event) {
+
+    public void onRenderTick(DeltaTracker deltaTracker) {
         if (MC.level == null) {
             CMDCamClient.resetServerAvailability();
             CMDCamClient.resetTargetMarker();
         }
         
         renderingHand = false;
-        float partialTicks = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        float partialTicks = deltaTracker.getGameTimeDeltaPartialTick(false);
         
         if (MC.player != null && MC.level != null) {
             if (!MC.isPaused()) {
@@ -151,7 +156,7 @@ public class CamEventHandlerClient {
                     CMDCamClient.renderTickPath(MC.level, partialTicks);
                 } else {
                     CMDCamClient.noTickPath(MC.level, partialTicks);
-                    double timeFactor = event.getPartialTick().getRealtimeDeltaTicks();
+                    double timeFactor = deltaTracker.getRealtimeDeltaTicks();
                     double vanillaFov = fovExactVanilla(partialTicks);
                     double currentFov = vanillaFov + fov;
                     double x = calculatePointInCurve(currentFov);
@@ -208,9 +213,8 @@ public class CamEventHandlerClient {
             }
         }
     }
-    
-    @SubscribeEvent
-    public void fov(ComputeFov event) {
+
+    public void fov(ViewportEvent.ComputeFov event) {
         if (skipFov)
             return;
         
@@ -223,10 +227,9 @@ public class CamEventHandlerClient {
         }
         renderingHand = !renderingHand;
     }
-    
-    @SubscribeEvent
-    public void worldRender(RenderLevelStageEvent event) {
-        if (CMDCamClient.isPlaying() || event.getStage() != Stage.AFTER_ENTITIES)
+
+    public void worldRender(WorldRenderContext context) {
+        if (CMDCamClient.isPlaying())
             return;
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE,
@@ -236,8 +239,8 @@ public class CamEventHandlerClient {
         
         Vec3 view = MC.gameRenderer.getMainCamera().getPosition();
         
-        RenderSystem.setProjectionMatrix(event.getProjectionMatrix(), VertexSorting.ORTHOGRAPHIC_Z);
-        PoseStack pose = event.getPoseStack();
+        RenderSystem.setProjectionMatrix(context.projectionMatrix(), VertexSorting.ORTHOGRAPHIC_Z);
+        PoseStack pose = context.matrixStack();
         
         pose.pushPose();
         pose.translate((float) -view.x(), (float) -view.y(), (float) -view.z());
@@ -353,19 +356,16 @@ public class CamEventHandlerClient {
         pBuffer.addVertex(matrix4f, (float) (origin.x + view.x * 2), (float) (origin.y + view.y * 2), (float) (origin.z + view.z * 2)).setColor(0, 0, 255, 255).setNormal(
             pMatrixStack.last(), (float) view.x, (float) view.y, (float) view.z);
     }
-    
-    @SubscribeEvent
-    public void cameraRoll(ComputeCameraAngles event) {
+
+    public void cameraRoll(ViewportEvent.ComputeCameraAngles event) {
         event.setRoll(roll);
     }
-    
-    @SubscribeEvent
-    public void onPlayerInteract(EntityInteract event) {
+
+    public void onPlayerInteract(PlayerInteractEvent.EntityInteract event) {
         interact(event);
     }
-    
-    @SubscribeEvent
-    public void onPlayerInteract(RightClickBlock event) {
+
+    public void onPlayerInteract(PlayerInteractEvent.RightClickBlock event) {
         interact(event);
     }
     
@@ -373,13 +373,13 @@ public class CamEventHandlerClient {
         if (selectingTarget == null || !event.getLevel().isClientSide)
             return;
         
-        if (event instanceof EntityInteract) {
-            selectingTarget.accept(new CamTarget.EntityTarget(((EntityInteract) event).getTarget()));
-            event.getEntity().sendSystemMessage(Component.translatable("scene.look.target.entity", ((EntityInteract) event).getTarget().getStringUUID()));
+        if (event instanceof PlayerInteractEvent.EntityInteract ) {
+            selectingTarget.accept(new CamTarget.EntityTarget(((PlayerInteractEvent.EntityInteract) event).getTarget()));
+            event.getEntity().sendSystemMessage(Component.translatable("scene.look.target.entity", ((PlayerInteractEvent.EntityInteract) event).getTarget().getStringUUID()));
             selectingTarget = null;
         }
         
-        if (event instanceof RightClickBlock) {
+        if (event instanceof PlayerInteractEvent.RightClickBlock) {
             selectingTarget.accept(new CamTarget.BlockTarget(event.getPos()));
             event.getEntity().sendSystemMessage(Component.translatable("scene.look.target.pos", event.getPos().toShortString()));
             selectingTarget = null;

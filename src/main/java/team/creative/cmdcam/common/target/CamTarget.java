@@ -13,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import team.creative.cmdcam.client.mixin.ServerLevelAccessor;
 import team.creative.creativecore.common.util.math.vec.Vec3d;
 import team.creative.creativecore.common.util.registry.NamedTypeRegistry;
 import team.creative.creativecore.common.util.registry.exception.RegistryException;
@@ -106,7 +107,7 @@ public abstract class CamTarget {
         @OnlyIn(Dist.CLIENT)
         public void start(Level level) {
             if (level instanceof ServerLevel)
-                cachedEntity = ((ServerLevel) level).getEntities().get(uuid);
+                cachedEntity = ((ServerLevelAccessor) level).callGetEntities().get(uuid);
             else
                 for (Entity entity : ((ClientLevel) level).entitiesForRendering())
                     if (entity.getUUID().equals(uuid)) {
@@ -145,7 +146,7 @@ public abstract class CamTarget {
         public Component print(Level level) {
             Entity resultEntity = null;
             if (level instanceof ServerLevel)
-                resultEntity = ((ServerLevel) level).getEntities().get(uuid);
+                resultEntity = ((ServerLevelAccessor) level).callGetEntities().get(uuid);
             else
                 for (Entity entity : ((ClientLevel) level).entitiesForRendering())
                     if (entity.getUUID().equals(uuid)) {

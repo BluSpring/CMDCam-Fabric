@@ -6,6 +6,11 @@
     "server": [
     ],
     "mixins": [
+        "ArgumentTypeInfosAccessor",
+        "LocalCoordinatesAccessor",
+        "MinecraftServerAccessor",
+        "ServerLevelAccessor",
+        "WorldCoordinatesAccessor"
     ],
     "client": [
         "CameraMixin",
