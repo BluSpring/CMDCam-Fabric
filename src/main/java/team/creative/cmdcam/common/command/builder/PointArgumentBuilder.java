@@ -1,5 +1,9 @@
 package team.creative.cmdcam.common.command.builder;
 
+import java.util.function.BiConsumer;
+
+import org.apache.logging.log4j.util.TriConsumer;
+
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -7,6 +11,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.CommandNode;
+
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.coordinates.RotationArgument;
@@ -14,13 +19,10 @@ import net.minecraft.commands.arguments.coordinates.Vec3Argument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
-import org.apache.logging.log4j.util.TriConsumer;
 import team.creative.cmdcam.client.SceneException;
 import team.creative.cmdcam.common.command.CamCommandProcessor;
 import team.creative.cmdcam.common.math.point.CamPoint;
 import team.creative.cmdcam.common.scene.CamScene;
-
-import java.util.function.BiConsumer;
 
 public class PointArgumentBuilder extends ArgumentBuilder<CommandSourceStack, PointArgumentBuilder> {
     
@@ -67,40 +69,8 @@ public class PointArgumentBuilder extends ArgumentBuilder<CommandSourceStack, Po
     
     @Override
     public CommandNode<CommandSourceStack> build() {
-        LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(literal);
         
-        if (indexConsumer != null)
-            builder.then(RequiredArgumentBuilder.<CommandSourceStack, Integer>argument("index", IntegerArgumentType.integer()).executes((x) -> {
-                if (processor.canCreatePoint(x)) {
-                    CamPoint point = processor.createPoint(x);
-                    CamScene scene = processor.getScene(x);
-                    if (scene.posTarget != null)
-                        try {
-                            processor.makeRelative(processor.getScene(x), x.getSource().getLevel(), point);
-                        } catch (SceneException e) {
-                            x.getSource().sendFailure(e.getComponent());
-                        }
-                    processPoint(x, point);
-                }
-                return 0;
-            }));
-        else
-            builder.executes((x) -> {
-                if (processor.canCreatePoint(x)) {
-                    CamPoint point = processor.createPoint(x);
-                    CamScene scene = processor.getScene(x);
-                    if (scene.posTarget != null)
-                        try {
-                            processor.makeRelative(processor.getScene(x), x.getSource().getLevel(), point);
-                        } catch (SceneException e) {
-                            x.getSource().sendFailure(e.getComponent());
-                        }
-                    processPoint(x, point);
-                }
-                return 0;
-            });
-        
-        builder.then(Commands.argument("location", Vec3Argument.vec3()).executes((x) -> {
+        var command = Commands.argument("location", Vec3Argument.vec3()).executes((x) -> {
             Vec3 vec = Vec3Argument.getVec3(x, "location");
             CamPoint point = new CamPoint(vec.x, vec.y, vec.z, 0, 0, 0, 70);
             processPoint(x, point);
@@ -123,7 +93,40 @@ public class PointArgumentBuilder extends ArgumentBuilder<CommandSourceStack, Po
             CamPoint point = new CamPoint(vec.x, vec.y, vec.z, rotation.y, rotation.x, DoubleArgumentType.getDouble(x, "roll"), DoubleArgumentType.getDouble(x, "fov"));
             processPoint(x, point);
             return 0;
-        })))));
+        }))));
+        
+        LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(literal);
+        
+        if (indexConsumer != null)
+            builder = builder.then(RequiredArgumentBuilder.<CommandSourceStack, Integer>argument("index", IntegerArgumentType.integer()).executes((x) -> {
+                if (processor.canCreatePoint(x)) {
+                    CamPoint point = processor.createPoint(x);
+                    CamScene scene = processor.getScene(x);
+                    if (scene.posTarget != null)
+                        try {
+                            processor.makeRelative(processor.getScene(x), x.getSource().getUnsidedLevel(), point);
+                        } catch (SceneException e) {
+                            x.getSource().sendFailure(e.getComponent());
+                        }
+                    processPoint(x, point);
+                }
+                return 0;
+            }).then(command));
+        else
+            builder = builder.executes((x) -> {
+                if (processor.canCreatePoint(x)) {
+                    CamPoint point = processor.createPoint(x);
+                    CamScene scene = processor.getScene(x);
+                    if (scene.posTarget != null)
+                        try {
+                            processor.makeRelative(processor.getScene(x), x.getSource().getUnsidedLevel(), point);
+                        } catch (SceneException e) {
+                            x.getSource().sendFailure(e.getComponent());
+                        }
+                    processPoint(x, point);
+                }
+                return 0;
+            }).then(command);
         
         return builder.build();
     }

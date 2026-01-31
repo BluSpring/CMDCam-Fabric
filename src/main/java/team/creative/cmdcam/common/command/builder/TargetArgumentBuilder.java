@@ -47,7 +47,7 @@ public class TargetArgumentBuilder extends ArgumentBuilder<CommandSourceStack, T
     public CommandNode<CommandSourceStack> build() {
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(literal).executes(x -> {
             x.getSource().sendSuccess(() -> Component.translatable(look ? "scene.output.look" : "scene.output.follow", look ? processor.getScene(x).lookTarget.print(x.getSource()
-                    .getLevel()) : processor.getScene(x).posTarget.print(x.getSource().getLevel())), false);
+                    .getUnsidedLevel()) : processor.getScene(x).posTarget.print(x.getSource().getUnsidedLevel())), false);
             return 0;
         }).then(Commands.literal("none").executes(x -> {
             try {

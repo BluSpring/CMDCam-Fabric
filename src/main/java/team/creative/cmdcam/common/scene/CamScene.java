@@ -3,12 +3,14 @@ package team.creative.cmdcam.common.scene;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.Level;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import team.creative.cmdcam.CMDCam;
+import team.creative.cmdcam.common.command.argument.DurationArgument;
 import team.creative.cmdcam.common.math.follow.CamFollowConfig;
 import team.creative.cmdcam.common.math.interpolation.CamInterpolation;
 import team.creative.cmdcam.common.math.interpolation.CamPitchMode;
@@ -26,7 +28,10 @@ import team.creative.creativecore.common.util.registry.exception.RegistryExcepti
 public class CamScene {
     
     public static CamScene createDefault() {
-        return new CamScene(10000, 0, "outside", new ArrayList<>(), CamInterpolation.HERMITE);
+        var scene = new CamScene(DurationArgument.parseDuration(CMDCam.CONFIG.defaultDuration, 10000), 0, CMDCam.CONFIG.defaultMode, new ArrayList<>(), CamInterpolation.REGISTRY
+                .get(CMDCam.CONFIG.defaultInterpolation));
+        scene.smoothBeginning = CMDCam.CONFIG.defaultSmoothStart;
+        return scene;
     }
     
     private boolean started = false;
@@ -52,11 +57,11 @@ public class CamScene {
     
     public List<CamPoint> points;
     
-    public boolean smoothBeginning = false;
+    public boolean smoothBeginning = true;
     public CamPitchMode pitchMode = CamPitchMode.FIX_KEEP_DIRECTION;
     public boolean distanceBasedTiming = false;
-
-    @Environment(EnvType.CLIENT)
+    
+    @OnlyIn(Dist.CLIENT)
     public CamRun run;
     
     public CamScene(long duration, int loop, String mode, List<CamPoint> points, CamInterpolation interpolation) {

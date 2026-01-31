@@ -1,7 +1,5 @@
 package team.creative.cmdcam.common.mod.minema;
 
-//import com.github.pupnewfster.minema_resurrection.CaptureSession;
-
 public class MinemaInteractor {
     
     private static boolean STARTED = false;
@@ -30,6 +28,6 @@ public class MinemaInteractor {
     
     public static long getVideoTime() {
         //return CaptureSession.singleton.getTime().getVideoTime();
-        return 0L;
+        return 0;
     }
 }

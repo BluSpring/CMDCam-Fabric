@@ -1,10 +1,10 @@
 package team.creative.cmdcam.common.scene.mode;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import team.creative.cmdcam.client.CamEventHandlerClient;
 import team.creative.cmdcam.common.math.point.CamPoint;
 import team.creative.cmdcam.common.scene.CamScene;
@@ -30,20 +30,20 @@ public abstract class CamMode {
     public Component title() {
         return Component.translatable("cam.mode." + REGISTRY.getId(this));
     }
-
-    @Environment(EnvType.CLIENT)
+    
+    @OnlyIn(Dist.CLIENT)
     public void started(CamRun run) {}
-
-    @Environment(EnvType.CLIENT)
+    
+    @OnlyIn(Dist.CLIENT)
     public void finished(CamRun run) {
         CamEventHandlerClient.resetFOV();
         CamEventHandlerClient.resetRoll();
     }
-
-    @Environment(EnvType.CLIENT)
+    
+    @OnlyIn(Dist.CLIENT)
     public abstract Entity getCamera();
-
-    @Environment(EnvType.CLIENT)
+    
+    @OnlyIn(Dist.CLIENT)
     public void process(CamPoint point) {
         CamEventHandlerClient.roll((float) point.roll);
         CamEventHandlerClient.fov(point.zoom);
@@ -59,8 +59,8 @@ public abstract class CamMode {
     }
     
     public abstract boolean outside();
-
-    @Environment(EnvType.CLIENT)
+    
+    @OnlyIn(Dist.CLIENT)
     public void correctTargetPosition(Vec3d vec) {}
     
 }

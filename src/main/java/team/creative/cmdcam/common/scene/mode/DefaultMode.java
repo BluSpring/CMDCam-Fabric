@@ -1,9 +1,9 @@
 package team.creative.cmdcam.common.scene.mode;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import team.creative.cmdcam.common.math.point.CamPoint;
 import team.creative.cmdcam.common.scene.CamScene;
 import team.creative.cmdcam.common.scene.run.CamRun;
@@ -21,14 +21,14 @@ public class DefaultMode extends CamMode {
     }
     
     @Override
-    @Environment(EnvType.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void process(CamPoint point) {
         super.process(point);
         Minecraft.getInstance().mouseHandler.grabMouse();
     }
     
     @Override
-    @Environment(EnvType.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void finished(CamRun run) {
         super.finished(run);
         Minecraft mc = Minecraft.getInstance();
@@ -37,13 +37,13 @@ public class DefaultMode extends CamMode {
     }
     
     @Override
-    @Environment(EnvType.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public Entity getCamera() {
         return Minecraft.getInstance().player;
     }
     
     @Override
-    @Environment(EnvType.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void correctTargetPosition(Vec3d vec) {
         vec.y -= Minecraft.getInstance().player.getEyeHeight();
     }

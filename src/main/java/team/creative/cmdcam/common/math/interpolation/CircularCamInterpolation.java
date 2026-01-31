@@ -3,11 +3,11 @@ package team.creative.cmdcam.common.math.interpolation;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import org.apache.commons.lang3.ArrayUtils;
 
 import net.minecraft.client.Minecraft;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import team.creative.cmdcam.common.scene.CamScene;
 import team.creative.cmdcam.common.scene.attribute.CamAttribute;
 import team.creative.cmdcam.common.target.CamTarget;
@@ -27,11 +27,11 @@ public class CircularCamInterpolation extends CamInterpolation {
         super(new Color(255, 255, 0));
         this.clockwise = clockwise;
     }
-
-    @Environment(EnvType.CLIENT)
+    
+    @OnlyIn(Dist.CLIENT)
     public <T extends VecNd> Interpolation<T> createClient(double[] timed, CamScene scene, T before, List<T> points, T after, CamAttribute<T> attribute) {
         Minecraft mc = Minecraft.getInstance();
-        Vec3d center = scene.lookTarget.position(mc.level, mc.getTimer().getGameTimeDeltaTicks());
+        Vec3d center = scene.lookTarget.position(mc.level, mc.getTimer().getGameTimeDeltaPartialTick(false));
         if (center != null) {
             List<Vec3d> points3 = (List<Vec3d>) points;
             points.add(points.get(0));
@@ -121,7 +121,7 @@ public class CircularCamInterpolation extends CamInterpolation {
         @Override
         public Vec3d valueAt(double t) {
             Minecraft mc = Minecraft.getInstance();
-            Vec3d center = target.position(mc.level, mc.getTimer().getGameTimeDeltaTicks());
+            Vec3d center = target.position(mc.level, mc.getTimer().getGameTimeDeltaPartialTick(false));
             if (center != null) {
                 Vec3d centerPoint = new Vec3d(center.x, center.y, center.z);
                 

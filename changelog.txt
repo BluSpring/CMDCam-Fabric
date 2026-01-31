@@ -1,3 +1,18 @@
+2.2.7
+Fixed insert command
+
+2.2.5
+Added defaultSmoothStart option
+
+2.2.4
+Added configuration for default scene settings
+
+2.2.2
+Adapted to CreativeCore 2.13.0
+
+2.2.1
+Added rendering title even when camera path is active
+
 2.2.0
 Added commands to get current settings of scene
 Added missing translations
@@ -9,6 +24,7 @@ Fixed crash when follow target dies
 
 2.1.1
 Fixed target pos not working in singleplayer (causing an exception)
+Added compatibility with neoforge 20.4.80-beta
 
 2.1.0
 Added support for Minema Resurrection 2

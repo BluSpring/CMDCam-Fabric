@@ -49,7 +49,7 @@ dependencies {
 
     modImplementation "net.fabricmc:fabric-loader:${project.property 'fabric_loader_version'}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.property 'fabric_api_version'}"
-    
+
     //implementation project(':CreativeCore')
 
     //minecraftLibrary fg.deobf("curse.maven:minema-resurrection-596719:4816846")
@@ -118,7 +118,7 @@ String getChangelogText() {
             return false
         }
     }
-    
+
     return result
 }
 
