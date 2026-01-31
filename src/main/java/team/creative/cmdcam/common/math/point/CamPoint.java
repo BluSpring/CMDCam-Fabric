@@ -8,8 +8,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import team.creative.cmdcam.client.CamEventHandlerClient;
 import team.creative.cmdcam.common.scene.attribute.CamAttribute;
 import team.creative.creativecore.common.util.math.vec.Vec3d;
@@ -18,7 +18,7 @@ import team.creative.creativecore.common.util.mc.TickUtils;
 
 public class CamPoint extends Vec3d {
     
-    @OnlyIn(Dist.CLIENT)
+    @Environment(EnvType.CLIENT)
     public static CamPoint createLocal() {
         Minecraft mc = Minecraft.getInstance();
         float partialTicks = TickUtils.getFrameTime(mc.level);

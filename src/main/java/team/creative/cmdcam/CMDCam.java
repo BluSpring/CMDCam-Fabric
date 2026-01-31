@@ -27,7 +27,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.api.distmarker.Dist;
+import net.fabricmc.api.EnvType;
 import team.creative.cmdcam.client.CMDCamClient;
 import team.creative.cmdcam.client.mixin.ArgumentTypeInfosAccessor;
 import team.creative.cmdcam.common.command.argument.CamModeArgument;

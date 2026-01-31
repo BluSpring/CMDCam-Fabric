@@ -7,8 +7,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import team.creative.cmdcam.client.CMDCamClient;
 import team.creative.cmdcam.client.SceneException;
 import team.creative.cmdcam.common.math.interpolation.CamInterpolation;
@@ -22,7 +22,7 @@ import team.creative.cmdcam.common.scene.attribute.CamAttribute;
 import team.creative.cmdcam.common.scene.timer.RealTimeTimer;
 import team.creative.cmdcam.common.scene.timer.RunTimer;
 
-@OnlyIn(Dist.CLIENT)
+@Environment(EnvType.CLIENT)
 public class CamRun {
     
     private static Minecraft mc = Minecraft.getInstance();
