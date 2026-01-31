@@ -7,6 +7,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
+import io.github.fabricators_of_create.porting_lib.event.client.OverlayRenderCallback;
 import io.github.fabricators_of_create.porting_lib.gui.layered.GuiLayerRegistry;
 import io.github.fabricators_of_create.porting_lib.gui.layered.VanillaGuiLayers;
 import net.fabricmc.api.ClientModInitializer;
@@ -14,6 +15,7 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
@@ -70,7 +72,7 @@ public class CMDCamClient implements ClientModInitializer {
     }
     
     private static void layers() {
-        GuiLayerRegistry.registerAbove(VanillaGuiLayers.TITLE, ResourceLocation.fromNamespaceAndPath(CMDCam.MODID, VanillaGuiLayers.TITLE.getNamespace()), (graphics, tracker) -> {
+        HudRenderCallback.EVENT.register((graphics, tracker) -> {
             if (CMDCamClient.isPlaying())
                 ((GuiAccessor) Minecraft.getInstance().gui).callRenderTitle(graphics, tracker);
         });
