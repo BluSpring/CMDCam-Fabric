@@ -58,7 +58,7 @@ dependencies {
     def plModules = ['base', 'client_events']
 
     for (final def module in plModules) {
-        modImplementation(include("io.github.fabricators_of_create.Porting-Lib:${module}:3.1.0-beta.82+1.21.1"))
+        modImplementation(include("io.github.fabricators_of_create.Porting-Lib:${module}:3.1.0-beta.85+1.21.1"))
     }
 }
 
