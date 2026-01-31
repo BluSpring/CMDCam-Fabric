@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.blaze3d.vertex.VertexFormat.Mode;
+import io.github.fabricators_of_create.porting_lib.client_events.event.client.ViewportEvent;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -38,7 +39,6 @@ import team.creative.cmdcam.common.scene.CamScene;
 import team.creative.cmdcam.common.scene.attribute.CamAttribute;
 import team.creative.cmdcam.common.scene.mode.OutsideMode;
 import team.creative.cmdcam.common.target.CamTarget;
-import team.creative.cmdcam.fabric.ComputeCameraAnglesCallback;
 import team.creative.creativecore.common.util.math.interpolation.Interpolation;
 import team.creative.creativecore.common.util.math.vec.Vec3d;
 
@@ -413,7 +413,7 @@ public class CamEventHandlerClient {
             (float) view.x, (float) view.y, (float) view.z);
     }
 
-    public static void cameraRoll(ComputeCameraAnglesCallback event) {
+    public static void cameraRoll(ViewportEvent.ComputeCameraAngles event) {
         event.setRoll(roll);
     }
 

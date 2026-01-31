@@ -2,6 +2,7 @@ package team.creative.cmdcam.client;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import io.github.fabricators_of_create.porting_lib.client_events.event.client.ViewportEvent;
 import io.github.fabricators_of_create.porting_lib.event.client.FieldOfViewEvents;
 import io.github.fabricators_of_create.porting_lib.event.client.RenderFrameEvent;
 import net.fabricmc.api.ClientModInitializer;
@@ -29,7 +30,6 @@ import team.creative.cmdcam.common.math.interpolation.CamInterpolation;
 import team.creative.cmdcam.common.math.point.CamPoint;
 import team.creative.cmdcam.common.packet.GetPathPacket;
 import team.creative.cmdcam.common.packet.SetPathPacket;
-import team.creative.cmdcam.fabric.ComputeCameraAnglesCallback;
 import team.creative.cmdcam.common.scene.CamScene;
 import team.creative.cmdcam.common.util.SceneJsonIO;
 import team.creative.creativecore.client.CreativeCoreClient;
@@ -75,7 +75,7 @@ public class CMDCamClient implements ClientModInitializer {
 
         WorldRenderEvents.AFTER_ENTITIES.register(CamEventHandlerClient::worldRender);
 
-        ComputeCameraAnglesCallback.EVENT.register(CamEventHandlerClient::cameraRoll);
+        ViewportEvent.ComputeCameraAngles.EVENT.register(CamEventHandlerClient::cameraRoll);
 
         UseBlockCallback.EVENT.register(CamEventHandlerClient::onPlayerUseBlock);
         UseEntityCallback.EVENT.register(CamEventHandlerClient::onPlayerUseEntity);

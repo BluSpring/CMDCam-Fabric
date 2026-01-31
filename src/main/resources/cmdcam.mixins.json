@@ -16,8 +16,6 @@
     "CurrentViewEntityMixin",
     "EntitySelectorMixin",
     "GameRendererAccessor",
-    "GameRendererMixin",
-    "MinecraftMixin",
     "MouseOverMixin"
   ],
   "minVersion": "0.8"
