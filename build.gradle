@@ -55,7 +55,7 @@ dependencies {
     //minecraftLibrary fg.deobf("curse.maven:minema-resurrection-596719:4816846")
     modImplementation "curse.maven:creativecore-257814:7436565"
 
-    def plModules = ['base', 'client_events']
+    def plModules = ['base', 'client_events', 'entity', 'registry', 'core', 'item_abilities', 'gui_utils', 'transfer', 'common', 'config', 'loot', 'tags', 'mixin_extensions']
 
     for (final def module in plModules) {
         modImplementation(include("io.github.fabricators_of_create.Porting-Lib:${module}:3.1.0-beta.85+1.21.1"))
