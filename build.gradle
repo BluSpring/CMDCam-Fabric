@@ -80,7 +80,7 @@ processResources {
 
 jar {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    archiveFileName.set(project.mod_name + "_FORGE_v" + project.mod_version + "_mc" + project.minecraft_version + ".jar")
+    archiveFileName.set(project.mod_name + "_FABRIC_v" + project.mod_version + "_mc" + project.minecraft_version + ".jar")
     manifest {
         attributes([
                 "Specification-Title": project.mod_name,
