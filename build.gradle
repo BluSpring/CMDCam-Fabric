@@ -1,42 +1,170 @@
 plugins {
     id 'eclipse'
     id 'idea'
+    id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
+    id 'com.diffplug.eclipse.apt' version '3.43.0'
     id 'com.modrinth.minotaur' version '2.+'
-    id 'net.neoforged.gradle.userdev' version '7.1.+'
+    id 'com.matthewprenger.cursegradle' version '1.4+'
+}
+
+repositories {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = "https://api.modrinth.com/maven"
+            }
+        }
+        // forRepositories(fg.repository) // Uncomment when using ForgeGradle
+        filter {
+            includeGroup "maven.modrinth"
+        }
+    }
+    maven {
+        url "https://mvn.devos.one/snapshots/"
+    }
+    maven {
+        name = "JitPack"
+        url = "https://jitpack.io/"
+    }
+
+    maven {
+        name = "Cafeteria Dev"
+        url = "https://maven.cafeteria.dev/releases/"
+    }
+
+    maven {
+        name = "JamiesWhiteShirt Dev"
+        url = "https://maven.jamieswhiteshirt.com/libs-release"
+        content {
+            includeGroup("com.jamieswhiteshirt")
+        }
+    }
 }
 
 group= "team.creative" + project.mod_id
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
-project.evaluationDependsOn(":CreativeCore")
-
-runs {  
-    configureEach {
-        workingDirectory project.file('run')
-        systemProperty 'forge.logging.console.level', 'debug'
-        
-        modSource project.sourceSets.main
-        modSource project(":CreativeCore").sourceSets.main
-    }
-    
-    client {
-    }
-    
-    server {
-    }
-}
+//project.evaluationDependsOn(":CreativeCore")
 
 dependencies {
-    implementation "net.neoforged:neoforge:${forge_version}"
-    
-    implementation project(':CreativeCore')
-    
-    //minecraftLibrary "curse.maven:minema-resurrection-596719:4816846"
+    minecraft "com.mojang:minecraft:${project.property 'minecraft_version'}"
+
+    implementation "net.fabricmc:fabric-loader:${project.property 'fabric_loader_version'}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.property 'fabric_api_version'}"
+
+    //implementation project(':CreativeCore')
+
+    //minecraftLibrary fg.deobf("curse.maven:minema-resurrection-596719:4816846")
+    implementation "maven.modrinth:creativecore:2.14.16-fabric,26.1.2"
 }
 
-modProperties = [ '    displayTest="NONE"' ]
-modDependencies = [
-    [ modId: "creativecore", type: "required", ordering: "NONE", side: "BOTH", versionRange: "[" + creativecore_version + ",)" ]
+def resourceTargets = ['META-INF/mods.toml', 'pack.mcmeta', 'fabric.mod.json']
+def replaceProperties = [
+        minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
+        mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+        mod_authors: mod_authors, mod_description: mod_description, mod_display_url: mod_display_url,
+        creativecore_version: creativecore_version, github_project: github_project,
 ]
-modMixins = [ "cmdcam.mixins.json" ]
+processResources {
+    inputs.properties replaceProperties
+    replaceProperties.put 'project', project
+
+    exclude("META-INF/neoforge.mods.toml")
+
+    filesMatching(resourceTargets) {
+        expand replaceProperties
+    }
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    archiveFileName.set(project.mod_name + "_FORGE_v" + project.mod_version + "_mc" + project.minecraft_version + ".jar")
+    manifest {
+        attributes([
+                "Specification-Title": project.mod_name,
+                "Specification-Vendor": "CreativeMD",
+                "Specification-Version": project.mod_version,
+                "Implementation-Title": project.mod_name,
+                "Implementation-Version"  : project.mod_version,
+                "Implementation-Vendor": "CreativeMD",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+String getChangelogText() {
+    String result = ''
+    boolean first = true
+    file('changelog.txt').readLines().find {
+        if (first) {
+            if (it.equals(project.mod_version)) {
+                first = false
+            }
+            return false
+        } else if (!it?.trim()) {
+            return true
+        } else {
+            result += "* " + it + "\n"
+            return false
+        }
+    }
+
+    return result
+}
+
+task upload(type: GradleBuild) {
+    description 'Uploads new version to modrinth and curseforge.'
+    group = 'publishing'
+    tasks = ['modrinth', 'curseforge']
+}
+
+gradle.taskGraph.whenReady {
+    if (it.hasTask(tasks.modrinth) || it.hasTask(tasks.curseforge)) {
+        if (!getChangelogText()?.trim()) {
+            throw new GradleException('No changelog provided')
+        }
+    }
+}
+
+tasks.modrinth.enabled = System.getenv("MODRINTH_TOKEN") != null
+tasks.modrinth.group = 'publishing'
+modrinth {
+    token = System.getenv("MODRINTH_TOKEN")
+    projectId = project.mod_id
+    versionNumber = project.mod_version
+    versionType = project.release_type
+    uploadFile = jar
+    gameVersions = [ project.minecraft_version ]
+    changelog = getChangelogText()
+    loaders = [ "fabric" ]
+    dependencies {
+        required.project "creativecore"
+    }
+}
+
+/*tasks.curseforge.enabled = System.getenv("CURSEFORGE_TOKEN") != null
+tasks.curseforge.group = 'publishing'
+curseforge {
+    apiKey = System.getenv("CURSEFORGE_TOKEN")
+    project {
+        id = project.curse_id
+        changelog = getChangelogText()
+        changelogType = "markdown"
+        addGameVersion project.minecraft_version
+        addGameVersion "Fabric"
+        releaseType = project.release_type
+        mainArtifact(jar) {
+        }
+        relations {
+            requiredLibrary "creativecore"
+        }
+    }
+}
+*/

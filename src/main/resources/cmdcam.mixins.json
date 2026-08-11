@@ -1,11 +1,12 @@
 {
     "required": true,
     "package": "team.creative.cmdcam.client.mixin",
-    "compatibilityLevel": "JAVA_17",
-    "refmap": "cmdcam.mixin.refmap.json",
+    "compatibilityLevel": "JAVA_25",
     "server": [
     ],
     "mixins": [
+        "fabric.LocalCoordinatesAccessor",
+        "fabric.WorldCoordinatesAccessor"
     ],
     "client": [
         "CameraAccessor",
@@ -13,7 +14,8 @@
         "CurrentViewEntityMixin",
         "EntitySelectorMixin",
         "GuiAccessor",
-        "MouseOverMixin"
+        "MouseOverMixin",
+        "fabric.CameraMixin"
     ],
     "minVersion": "0.8"
 }

@@ -3,17 +3,18 @@ package team.creative.cmdcam.server;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import team.creative.cmdcam.common.scene.CamScene;
+
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedDataType;
-import team.creative.cmdcam.common.scene.CamScene;
 
 public class CMDCamServer {
     
     public static final CamCommandProcessorServer PROCESSOR = new CamCommandProcessorServer();
     
-    private static final SavedDataType<CamSaveData> FACTORY = new SavedDataType<>(CamSaveData.DATA_NAME, CamSaveData::new, x -> CamSaveData.CODEC, DataFixTypes.SAVED_DATA_COMMAND_STORAGE);
+    private static final SavedDataType<CamSaveData> FACTORY = new SavedDataType<>(CamSaveData.DATA_NAME, CamSaveData::new, CamSaveData.CODEC, DataFixTypes.SAVED_DATA_COMMAND_STORAGE);
     
     public static CamScene get(Level level, String name) {
         CamSaveData data = ((ServerLevel) level).getDataStorage().get(FACTORY);
@@ -25,7 +26,7 @@ public class CMDCamServer {
     public static void set(Level level, String name, CamScene scene) {
         CamSaveData data = ((ServerLevel) level).getDataStorage().get(FACTORY);
         if (data == null) {
-            data = new CamSaveData(null);
+            data = new CamSaveData();
             ((ServerLevel) level).getDataStorage().set(FACTORY, data);
         }
         data.set(name, scene);

@@ -2,6 +2,11 @@ package team.creative.cmdcam.common.target;
 
 import java.util.UUID;
 
+import team.creative.cmdcam.common.scene.run.CamRun;
+import team.creative.creativecore.common.util.math.vec.Vec3d;
+import team.creative.creativecore.common.util.registry.NamedTypeRegistry;
+import team.creative.creativecore.common.util.registry.exception.RegistryException;
+
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -10,10 +15,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import team.creative.cmdcam.common.scene.run.CamRun;
-import team.creative.creativecore.common.util.math.vec.Vec3d;
-import team.creative.creativecore.common.util.registry.NamedTypeRegistry;
-import team.creative.creativecore.common.util.registry.exception.RegistryException;
 
 public abstract class CamTarget {
     
@@ -135,7 +136,7 @@ public abstract class CamTarget {
         public Component print(Level level) {
             Entity resultEntity = null;
             if (level instanceof ServerLevel)
-                resultEntity = ((ServerLevel) level).getEntities().get(uuid);
+                resultEntity = level.getEntity(uuid);
             else
                 for (Entity entity : ((ClientLevel) level).entitiesForRendering())
                     if (entity.getUUID().equals(uuid)) {

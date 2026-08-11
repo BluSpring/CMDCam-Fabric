@@ -3,6 +3,9 @@ package team.creative.cmdcam.common.command.builder;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.CommandNode;
+import team.creative.cmdcam.client.SceneException;
+import team.creative.cmdcam.common.command.CamCommandProcessor;
+import team.creative.cmdcam.common.target.CamTarget;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -12,9 +15,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import team.creative.cmdcam.client.SceneException;
-import team.creative.cmdcam.common.command.CamCommandProcessor;
-import team.creative.cmdcam.common.target.CamTarget;
 
 public class TargetArgumentBuilder extends ArgumentBuilder<CommandSourceStack, TargetArgumentBuilder> {
     
@@ -48,7 +48,7 @@ public class TargetArgumentBuilder extends ArgumentBuilder<CommandSourceStack, T
         LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(literal).executes(x -> {
             var target = look ? processor.getScene(x).lookTarget : processor.getScene(x).posTarget;
             x.getSource().sendSuccess(() -> Component.translatable(look ? "scene.output.look" : "scene.output.follow", target == null ? "none" : target.print(x.getSource()
-                    .getUnsidedLevel())), false);
+                    .getLevel())), false);
             return 0;
         }).then(Commands.literal("none").executes(x -> {
             try {

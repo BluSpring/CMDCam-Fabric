@@ -1,15 +1,16 @@
 package team.creative.cmdcam.client;
 
 import org.lwjgl.glfw.GLFW;
+import team.creative.cmdcam.CMDCam;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import team.creative.cmdcam.CMDCam;
+
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 
 public class KeyHandler {
     
-    public static final KeyMapping.Category CATEGORY = new KeyMapping.Category(Identifier.fromNamespaceAndPath(CMDCam.MODID, "cmdcam"));
+    public static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(CMDCam.MODID, "cmdcam"));
     public static final KeyMapping ZOOM_IN = new KeyMapping("key.zoomin", GLFW.GLFW_KEY_V, CATEGORY);
     public static final KeyMapping ZOOM_RESET = new KeyMapping("key.centerzoom", GLFW.GLFW_KEY_B, CATEGORY);
     public static final KeyMapping ZOOM_OUT = new KeyMapping("key.zoomout", GLFW.GLFW_KEY_N, CATEGORY);
@@ -23,20 +24,18 @@ public class KeyHandler {
     
     public static final KeyMapping CLEAR_POINT = new KeyMapping("key.clearPoint", GLFW.GLFW_KEY_DELETE, CATEGORY);
     
-    public static void registerKeys(RegisterKeyMappingsEvent event) {
-        event.registerCategory(CATEGORY);
+    public static void registerKeys() {
+        KeyMappingHelper.registerKeyMapping(ZOOM_IN);
+        KeyMappingHelper.registerKeyMapping(ZOOM_RESET);
+        KeyMappingHelper.registerKeyMapping(ZOOM_OUT);
         
-        event.register(ZOOM_IN);
-        event.register(ZOOM_RESET);
-        event.register(ZOOM_OUT);
+        KeyMappingHelper.registerKeyMapping(ROLL_LEFT);
+        KeyMappingHelper.registerKeyMapping(ROLL_RESET);
+        KeyMappingHelper.registerKeyMapping(ROLL_RIGHT);
         
-        event.register(ROLL_LEFT);
-        event.register(ROLL_RESET);
-        event.register(ROLL_RIGHT);
+        KeyMappingHelper.registerKeyMapping(POINT_ADD);
+        KeyMappingHelper.registerKeyMapping(START_STOP);
         
-        event.register(POINT_ADD);
-        event.register(START_STOP);
-        
-        event.register(CLEAR_POINT);
+        KeyMappingHelper.registerKeyMapping(CLEAR_POINT);
     }
 }

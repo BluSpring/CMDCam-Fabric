@@ -6,27 +6,26 @@ import java.util.Map.Entry;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
-
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.saveddata.SavedData;
 import team.creative.cmdcam.CMDCam;
 import team.creative.cmdcam.common.scene.CamScene;
 import team.creative.creativecore.common.util.registry.exception.RegistryException;
+
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.saveddata.SavedData;
 
 public class CamSaveData extends SavedData {
     
     public static final Identifier DATA_NAME = Identifier.tryBuild(CMDCam.MODID, "Scenes");
     public static final Codec<CamSaveData> CODEC = CompoundTag.CODEC.flatXmap(tag -> {
-        var data = new CamSaveData(null);
+        var data = new CamSaveData();
         data.load(tag);
         return DataResult.success(data);
     }, data -> DataResult.success(data.save(new CompoundTag())));
     
     private HashMap<String, CamScene> scenes = new HashMap<>();
     
-    public CamSaveData(ServerLevel level) {}
+    public CamSaveData() {}
     
     public CamScene get(String key) {
         return scenes.get(key);

@@ -3,30 +3,15 @@ package team.creative.cmdcam.client;
 import java.util.HashMap;
 import java.util.List;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
-import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
-import net.neoforged.neoforge.client.event.RenderPlayerEvent;
-import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
-import net.neoforged.neoforge.common.NeoForge;
 import team.creative.cmdcam.CMDCam;
 import team.creative.cmdcam.client.mixin.GuiAccessor;
 import team.creative.cmdcam.common.command.argument.InterpolationArgument;
-import team.creative.cmdcam.common.command.builder.PointArgumentBuilder;
-import team.creative.cmdcam.common.command.builder.SceneCommandBuilder;
-import team.creative.cmdcam.common.command.builder.SceneStartCommandBuilder;
+import team.creative.cmdcam.common.command.builder.client.PointArgumentBuilder;
+import team.creative.cmdcam.common.command.builder.client.SceneCommandBuilder;
+import team.creative.cmdcam.common.command.builder.client.SceneStartCommandBuilder;
 import team.creative.cmdcam.common.math.interpolation.CamInterpolation;
 import team.creative.cmdcam.common.math.point.CamPoint;
 import team.creative.cmdcam.common.packet.GetPathPacket;
@@ -35,7 +20,21 @@ import team.creative.cmdcam.common.scene.CamScene;
 import team.creative.creativecore.client.CreativeCoreClient;
 import team.creative.creativecore.common.util.mc.TickUtils;
 
-public class CMDCamClient {
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+
+public class CMDCamClient implements ClientModInitializer {
     
     public static final CamCommandProcessorClient PROCESSOR = new CamCommandProcessorClient();
     public static final HashMap<String, CamScene> SCENES = new HashMap<>();
@@ -62,82 +61,83 @@ public class CMDCamClient {
     public static void setServerAvailability() {
         serverAvailable = true;
     }
-    
-    public static void init(FMLClientSetupEvent event) {
-        NeoForge.EVENT_BUS.register(new CamEventHandlerClient());
+
+    public static void init() {
+        var handler = CamEventHandlerClient.INSTANCE;
         CreativeCoreClient.registerClientConfig(CMDCam.MODID);
     }
-    
-    public static void load(IEventBus bus) {
-        bus.addListener(CMDCamClient::init);
-        NeoForge.EVENT_BUS.addListener(CMDCamClient::commands);
-        NeoForge.EVENT_BUS.addListener(CMDCamClient::login);
-        bus.addListener(KeyHandler::registerKeys);
-        bus.addListener(CMDCamClient::layers);
+
+    @Override
+    public void onInitializeClient() {
+        init();
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> commands(dispatcher));
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> login());
+        KeyHandler.registerKeys();
+        layers();
     }
     
-    private static void layers(RegisterGuiLayersEvent event) {
-        event.registerAbove(VanillaGuiLayers.TITLE, Identifier.fromNamespaceAndPath(CMDCam.MODID, VanillaGuiLayers.TITLE.getNamespace()), (graphics, tracker) -> {
+    private static void layers() {
+        HudElementRegistry.attachElementAfter(VanillaHudElements.TITLE_AND_SUBTITLE, Identifier.fromNamespaceAndPath(CMDCam.MODID, "title"), (graphics, tracker) -> {
             if (CMDCamClient.isPlaying())
                 ((GuiAccessor) Minecraft.getInstance().gui).callExtractTitle(graphics, tracker);
         });
     }
     
-    private static void commands(RegisterClientCommandsEvent event) {
-        LiteralArgumentBuilder<CommandSourceStack> cam = Commands.literal("cam");
+    private static void commands(CommandDispatcher<FabricClientCommandSource> dispatcher) {
+        LiteralArgumentBuilder<FabricClientCommandSource> cam = ClientCommands.literal("cam");
         
         SceneStartCommandBuilder.start(cam, PROCESSOR);
         
         SceneCommandBuilder.scene(cam, PROCESSOR);
         
-        event.getDispatcher().register(cam.then(Commands.literal("stop").executes(x -> {
+        dispatcher.register(cam.then(ClientCommands.literal("stop").executes(x -> {
             CMDCamClient.stop();
             return 0;
-        })).then(Commands.literal("pause").executes(x -> {
+        })).then(ClientCommands.literal("pause").executes(x -> {
             CMDCamClient.pause();
             return 0;
-        })).then(Commands.literal("resume").executes(x -> {
+        })).then(ClientCommands.literal("resume").executes(x -> {
             CMDCamClient.resume();
             return 0;
-        })).then(Commands.literal("show").executes(x -> {
+        })).then(ClientCommands.literal("show").executes(x -> {
             CamEventHandlerClient.SHOW_ACTIVE_INTERPOLATION = true;
-            x.getSource().sendSuccess(() -> Component.translatable("scene.interpolation.show_active"), false);
+            x.getSource().sendFeedback(Component.translatable("scene.interpolation.show_active"));
             return 0;
-        }).then(Commands.argument("interpolation", InterpolationArgument.interpolationAll()).executes((x) -> {
+        }).then(ClientCommands.argument("interpolation", InterpolationArgument.interpolationAll()).executes((x) -> {
             String interpolation = StringArgumentType.getString(x, "interpolation");
             if (!interpolation.equalsIgnoreCase("all")) {
                 CamInterpolation.REGISTRY.get(interpolation).isRenderingEnabled = true;
-                x.getSource().sendSuccess(() -> Component.translatable("scene.interpolation.show", interpolation), false);
+                x.getSource().sendFeedback(Component.translatable("scene.interpolation.show", interpolation));
             } else {
                 for (CamInterpolation movement : CamInterpolation.REGISTRY.values())
                     movement.isRenderingEnabled = true;
-                x.getSource().sendSuccess(() -> Component.translatable("scene.interpolation.show_all"), false);
+                x.getSource().sendFeedback(Component.translatable("scene.interpolation.show_all"));
             }
             return 0;
-        }))).then(Commands.literal("hide").executes(x -> {
+        }))).then(ClientCommands.literal("hide").executes(x -> {
             CamEventHandlerClient.SHOW_ACTIVE_INTERPOLATION = false;
-            x.getSource().sendSuccess(() -> Component.translatable("scene.interpolation.hide_active"), false);
+            x.getSource().sendFeedback(Component.translatable("scene.interpolation.hide_active"));
             return 0;
-        }).then(Commands.argument("interpolation", InterpolationArgument.interpolationAll()).executes((x) -> {
+        }).then(ClientCommands.argument("interpolation", InterpolationArgument.interpolationAll()).executes((x) -> {
             String interpolation = StringArgumentType.getString(x, "interpolation");
             if (!interpolation.equalsIgnoreCase("all")) {
                 CamInterpolation.REGISTRY.get(interpolation).isRenderingEnabled = false;
-                x.getSource().sendSuccess(() -> Component.translatable("scene.interpolation.hide", interpolation), false);
+                x.getSource().sendFeedback(Component.translatable("scene.interpolation.hide", interpolation));
             } else {
                 for (CamInterpolation movement : CamInterpolation.REGISTRY.values())
                     movement.isRenderingEnabled = false;
-                x.getSource().sendSuccess(() -> Component.translatable("scene.interpolation.hide_all"), false);
+                x.getSource().sendFeedback(Component.translatable("scene.interpolation.hide_all"));
                 CamEventHandlerClient.SHOW_ACTIVE_INTERPOLATION = false;
             }
             return 0;
-        }))).then(Commands.literal("list").executes((x) -> {
+        }))).then(ClientCommands.literal("list").executes((x) -> {
             if (CMDCamClient.serverAvailable) {
-                x.getSource().sendFailure(Component.translatable("scenes.list_fail"));
+                x.getSource().sendError(Component.translatable("scenes.list_fail"));
                 return 0;
             }
-            x.getSource().sendSuccess(() -> Component.translatable("scenes.list", SCENES.size(), String.join(", ", SCENES.keySet())), true);
+            x.getSource().getPlayer().sendOverlayMessage(Component.translatable("scenes.list", SCENES.size(), String.join(", ", SCENES.keySet())));
             return 0;
-        })).then(Commands.literal("load").then(Commands.argument("path", StringArgumentType.string()).executes((x) -> {
+        })).then(ClientCommands.literal("load").then(ClientCommands.argument("path", StringArgumentType.string()).executes((x) -> {
             String pathArg = StringArgumentType.getString(x, "path");
             if (CMDCamClient.serverAvailable)
                 CMDCam.NETWORK.sendToServer(new GetPathPacket(pathArg));
@@ -145,12 +145,12 @@ public class CMDCamClient {
                 CamScene scene = CMDCamClient.SCENES.get(pathArg);
                 if (scene != null) {
                     set(scene);
-                    x.getSource().sendSuccess(() -> Component.translatable("scenes.load", pathArg), false);
+                    x.getSource().sendFeedback(Component.translatable("scenes.load", pathArg));
                 } else
-                    x.getSource().sendFailure(Component.translatable("scenes.load_fail", pathArg));
+                    x.getSource().sendError(Component.translatable("scenes.load_fail", pathArg));
             }
             return 0;
-        }))).then(Commands.literal("save").then(Commands.argument("path", StringArgumentType.string()).executes((x) -> {
+        }))).then(ClientCommands.literal("save").then(ClientCommands.argument("path", StringArgumentType.string()).executes((x) -> {
             String pathArg = StringArgumentType.getString(x, "path");
             try {
                 CamScene scene = CMDCamClient.createScene();
@@ -159,10 +159,10 @@ public class CMDCamClient {
                     CMDCam.NETWORK.sendToServer(new SetPathPacket(pathArg, scene));
                 else {
                     CMDCamClient.SCENES.put(pathArg, scene);
-                    x.getSource().sendSuccess(() -> Component.translatable("scenes.save", pathArg), false);
+                    x.getSource().sendFeedback(Component.translatable("scenes.save", pathArg));
                 }
             } catch (SceneException e) {
-                x.getSource().sendFailure(Component.translatable(e.getMessage()));
+                x.getSource().sendError(Component.translatable(e.getMessage()));
             }
             return 0;
         }))).then(new PointArgumentBuilder("follow_center", (x, y) -> targetMarker = y, PROCESSOR).executes(x -> {
@@ -172,11 +172,11 @@ public class CMDCamClient {
         
     }
     
-    private static void login(ClientPlayerNetworkEvent.LoggingIn event) {
+    private static void login() {
         scene = CamScene.createDefault();
     }
     
-    public static void renderBefore(RenderPlayerEvent.Pre event) {}
+    public static void renderBefore() {}
     
     public static CamScene getScene() {
         if (isPlaying())

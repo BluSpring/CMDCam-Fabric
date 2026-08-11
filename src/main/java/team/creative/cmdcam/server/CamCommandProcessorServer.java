@@ -6,13 +6,6 @@ import java.util.Collections;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import team.creative.cmdcam.CMDCam;
 import team.creative.cmdcam.client.SceneException;
 import team.creative.cmdcam.common.command.CamCommandProcessor;
@@ -22,7 +15,14 @@ import team.creative.cmdcam.common.packet.TeleportPathPacket;
 import team.creative.cmdcam.common.scene.CamScene;
 import team.creative.creativecore.common.network.CreativePacket;
 
-public class CamCommandProcessorServer implements CamCommandProcessor {
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+
+public class CamCommandProcessorServer implements CamCommandProcessor<CommandSourceStack> {
     
     @Override
     public CamScene getScene(CommandContext<CommandSourceStack> context) {
